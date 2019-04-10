@@ -13,15 +13,19 @@ public:
   WifiManager(){}
   ~WifiManager(){}
 
+  bool isLocal = false;
   bool isConnected = false;
   
   void init()
   {
     connect();
+    pinMode(13, OUTPUT);
+    digitalWrite(13, HIGH);
   }
 
   void connect()
   {
+    isLocal = false;
     isConnected = false;
     
     String ssid = Config::instance->getWifiSSID();
@@ -36,6 +40,7 @@ public:
       int curTry = 0;
       bool connected = true;
       while (WiFi.status() != WL_CONNECTED) {
+        DBG(".");
         if (curTry > 50)
         {
           connected = false;
@@ -47,10 +52,15 @@ public:
 
       isConnected = connected;
       DBG(isConnected?"WiFi Connected.":"WiFi Connection Error");
-    }else
-    {
-      DBG("Not connecting, ssid or pass not set.");
     }
+    if(!isConnected)
+    {
+      DBG("Setting up AP WiFi : ConnectBridge");
+      isLocal = true;
+      WiFi.softAP("ConnectBridge");
+    }
+
+    
+    digitalWrite(13, LOW);
   }
 };
-

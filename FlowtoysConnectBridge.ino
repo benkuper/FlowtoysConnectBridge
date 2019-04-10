@@ -25,11 +25,11 @@ void setup(void)
   rfManager.init();
   //btManager.init();
   wifiManager.init();
-  //oscManager.init();
+  oscManager.init();
 
   serialManager.setCommandCallback(&commandCallback);
   //btManager.setCommandCallback(&commandCallback);
-  //oscManager.setCommandCallback(&commandCallback);
+  oscManager.setCommandCallback(&commandCallback);
 
   rfManager.setRFDataCallback(&rfDataCallback);
 
@@ -39,11 +39,9 @@ void setup(void)
 
 void loop(void)
 {
-  
   serialManager.update();
-  //oscManager.update();
+  oscManager.update();
   rfManager.update();
-  
 }
 
 
@@ -54,6 +52,8 @@ void commandCallback(String providerId, CommandProvider::CommandData data)
   {
     case CommandProvider::CommandType::WAKEUP: rfManager.wakeUp(); break;
     case CommandProvider::CommandType::POWEROFF: rfManager.powerOff(); break;
+    case CommandProvider::CommandType::SET_ALL: rfManager.setAll(data.value1.intValue, data.value2.intValue, data.value3.intValue, true); break;
+    case CommandProvider::CommandType::SET_PAGEMODE: rfManager.setPageMode(data.value1.intValue, data.value2.intValue); break;
     case CommandProvider::CommandType::SET_MODE: rfManager.setMode(data.value1.intValue); break;
     case CommandProvider::CommandType::SET_PAGE: rfManager.setPage(data.value1.intValue); break;
     case CommandProvider::CommandType::SET_ADJUST: rfManager.setAjdust(data.value1.intValue); break;

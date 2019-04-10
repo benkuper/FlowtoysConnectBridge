@@ -8,6 +8,17 @@
 #include "SerialManager.h"
 
 
+/*
+ * 
+ * GROUP IDS (may change to 1-5)
+ * purple = 2
+blue = 3
+aqua =  4
+green = 5
+orange = 6
+
+ */
+
 class RFManager
 {
   public:
@@ -18,6 +29,8 @@ class RFManager
     
     ~RFManager() {}
 
+    int currentGroup;
+    
     uint8_t addrJ[5] = { 0x11, 0x50, 0x01, 0x07, 0xf1 }; // base adress for Flowtoys props,
     // first 2 bytes are subject to change depending on joined network
 
@@ -55,6 +68,8 @@ class RFManager
     void init()
     {
 
+      currentGroup = 3;
+      
       radio.begin();
       radio.setAutoAck(false);
       //  radio.setDataRate(RF24_2MBPS);
@@ -74,6 +89,7 @@ class RFManager
       #if SERIAL_DEBUG
     radio.printDetails();
       #endif
+
     }
 
     void update()
@@ -144,11 +160,13 @@ class RFManager
 
     void joinRF(uint32_t id)
     {
+      if(currentGroup == id) return;
+      currentGroup = id;
       
       addrJ[0] = id & 0xff;
       addrJ[1] = (id >> 8) & 0xff;
 
-      DBG("Joining RF Network with id "+String(id)+ " : "+String(addrJ[0])+", "+String(addrJ[1]));
+      DBG("Joining RF Network with id "+String(currentGroup)+ " : "+String(addrJ[0])+", "+String(addrJ[1]));
       
       radio.stopListening();
       radio.setPayloadSize(sizeof(sync_pkt));
@@ -230,6 +248,16 @@ class RFManager
       is_on = false;
     }
 
+
+     void setAll(int group, int page, int mode, bool forceSend)
+    {
+      joinRF(group);
+      sync_pkt.page = page;
+      sync_pkt.mode = mode;
+      sync_pkt_changed = true;
+      if(forceSend) sendPacket(2,20);
+    }
+
     void setPage(int page)
     {
       DBG("Set Page : "+String(page));
@@ -240,6 +268,14 @@ class RFManager
     void setMode(int mode)
     {
       DBG("Set Mode : "+String(mode));
+      sync_pkt.mode =  mode;
+      sync_pkt_changed = true;
+    }
+    
+     void setPageMode(int page, int mode)
+    {
+      DBG("Set Page : "+String(page));
+      sync_pkt.page = page;
       sync_pkt.mode =  mode;
       sync_pkt_changed = true;
     }

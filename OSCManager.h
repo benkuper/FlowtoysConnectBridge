@@ -20,7 +20,9 @@ public:
   void init()
   {    
     Udp.begin(localPort);
-    DBG("OSC Initialized");
+    char buf[16];
+    sprintf(buf, "IP:%d.%d.%d.%d", WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3] );
+    DBG("OSC Initialized, listening on "+String(buf)+":"+String(localPort));
   }
   
   void update() {
@@ -37,67 +39,71 @@ public:
       {     
         if(msg.fullMatch("/wakeUp"))
         {
-          
+            sendCommand(WAKEUP);
         }else if(msg.fullMatch("/powerOff"))
         {
-          
+            sendCommand(POWEROFF);
+        }if(msg.fullMatch("/group"))
+        {
+           CommandData d;
+            d.type = SET_GROUP;
+            d.value1.intValue = msg.getInt(0);
+            sendCommand(d);
         }else if(msg.fullMatch("/page"))
         {
-          
+          CommandData d;
+            d.type = SET_PAGE;
+            d.value1.intValue = msg.getInt(0);
+            sendCommand(d);
+        }else if(msg.fullMatch("/setAll"))
+        {
+          CommandData d;
+            d.type = SET_ALL;
+            d.value1.intValue = msg.getInt(0);
+            d.value2.intValue = msg.getInt(1);
+            d.value3.intValue = msg.getInt(2);
+            sendCommand(d);
+        }else if(msg.fullMatch("/pageMode"))
+        {
+          CommandData d;
+            d.type = SET_PAGEMODE;
+            d.value1.intValue = msg.getInt(0);
+            d.value2.intValue = msg.getInt(1);
+            sendCommand(d);
         }else if (msg.fullMatch("/mode"))
         {
-          
-        }else if(msg.fullMatch("/lfo"))
+         CommandData d;
+            d.type = SET_MODE;
+            d.value1.intValue = msg.getInt(0);
+            sendCommand(d);
+        }else if(msg.fullMatch("/nextPage"))
         {
-          
+          sendCommand(NEXT_PAGE);
+        }else if(msg.fullMatch("/nextMode"))
+        {
+          sendCommand(NEXT_MODE);
+        } else if(msg.fullMatch("/lfo"))
+        {
+           CommandData d;
+            d.type = SET_LFO;
+            d.value1.intValue = msg.getInt(0);
+            d.value2.intValue = msg.getInt(1);
+            sendCommand(d);
         }else if(msg.fullMatch("/seed"))
         {
-          
+          CommandData d;
+            d.type = SET_SEED;
+            d.value1.intValue = msg.getInt(0);
+            d.value2.intValue = msg.getInt(1);
+            sendCommand(d);
+        }else if(msg.fullMatch("/sync"))
+        {
+           sendCommand(SYNC_RF);
+        }else{
+          char addr[32];
+          msg.getAddress(addr, 0);
+          DBG("OSC Address not handled : "+String(addr));
         }
-
-        
-        /*
-        if (msg.match("/powerOff"))
-        {
-            rf->sync_pkt.poweroff = 1;
-            rf->sync_pkt.wakeup = 0;
-            rf->sendPacket(1, 10);
-        }else if (msg.match("/powerOn"))
-        {
-            rf->sync_pkt.poweroff = 0;
-            rf->sync_pkt.wakeup = 1;
-            rf->sendPacket(1, 255);
-          
-        } else if (msg.match("/mode"))
-        {
-          rf->sync_pkt.page = (byte) msg.getInt(0);
-          rf->sync_pkt.mode = (byte) msg.getInt(1);
-          rf->sendPacket(10, 10);
-        }else if (msg.match("/2/push1"))
-        {
-          #if SERIAL_DEBUG
-          Serial.println("Got push 1");
-          #endif
-          
-          if(msg.getFloat(0) > 0)
-          {
-            rf->sync_pkt.page =  (rf->sync_pkt.page+1)%3;
-            rf->sync_pkt_changed = true;
-          }
-        }else if (msg.match("/2/push2"))
-        {
-          #if SERIAL_DEBUG
-          Serial.println("Got push 2");
-          #endif
-          if(msg.getFloat(0) > 0)
-          {
-            rf->sync_pkt.mode =  (rf->sync_pkt.mode+1)%10;
-            rf->sync_pkt_changed = true;
-          }
-        }
-         */
-
-         
       }
     }
   }

@@ -14,7 +14,7 @@ public:
     }
 
     String providerId;
-    enum CommandType { WAKEUP, POWEROFF, SET_MODE, SET_PAGE, NEXT_MODE, NEXT_PAGE, SYNC_RF, SET_WIFI_CREDENTIALS, SET_GROUP, SET_ADJUST, SET_LFO, SET_SEED};
+    enum CommandType { WAKEUP, POWEROFF, SET_MODE, SET_PAGE, NEXT_MODE, NEXT_PAGE, SYNC_RF, SET_WIFI_CREDENTIALS, SET_GROUP, SET_ADJUST, SET_LFO, SET_SEED, SET_ALL, SET_PAGEMODE};
     
     union var
     {
@@ -29,6 +29,7 @@ public:
       String providerId;
       var value1;
       var value2;
+      var value3;
     };
 
     void sendCommand(CommandType type) { 
