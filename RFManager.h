@@ -11,7 +11,11 @@
 class RFManager
 {
   public:
-    RFManager() : radio(17, 5) {}
+    RFManager() : radio(17,5)
+    {
+      setRFDataCallback(&RFManager::onRFDataDefaultCallback);
+    }
+    
     ~RFManager() {}
 
     uint8_t addrJ[5] = { 0x11, 0x50, 0x01, 0x07, 0xf1 }; // base adress for Flowtoys props,
@@ -66,6 +70,10 @@ class RFManager
 
       currentNetworkId.id = Config::instance->getRFNetworkId();
       joinRF(currentNetworkId.id);
+
+      #if SERIAL_DEBUG
+    radio.printDetails();
+      #endif
     }
 
     void update()
@@ -74,7 +82,7 @@ class RFManager
 
       if (sync_pkt_changed) {
         DBG("Sync packet changed, sending packet");
-        sendPacket(10, 10);
+        sendPacket(2,20);
         age = now;
       } else if (is_on && now - age > 2000) {
         sendPacket();
@@ -136,11 +144,12 @@ class RFManager
 
     void joinRF(uint32_t id)
     {
-      DBG("Joining RF Network with id "+String(id));
       
       addrJ[0] = id & 0xff;
       addrJ[1] = (id >> 8) & 0xff;
 
+      DBG("Joining RF Network with id "+String(id)+ " : "+String(addrJ[0])+", "+String(addrJ[1]));
+      
       radio.stopListening();
       radio.setPayloadSize(sizeof(sync_pkt));
       radio.openReadingPipe(1, addrJ);
@@ -162,7 +171,7 @@ class RFManager
           if (sync_pkt.padding == current_counter) continue;
           current_counter = sync_pkt.padding;
 
-          //DBG("Received packet with padding : " +String(sync_pkt.padding));
+          DBG("Received packet with padding : " +String(sync_pkt.padding));
           
           if (sync_pkt.wakeup && !sync_pkt.poweroff) {
             is_on = true;
@@ -170,6 +179,8 @@ class RFManager
           if (sync_pkt.poweroff && !sync_pkt.wakeup) {
             is_on = false;
           }
+
+          onRFData();
         }
 
         return true;
@@ -185,7 +196,7 @@ class RFManager
         sync_pkt_changed = false;
       }      
 
-      //DBG("Send packet with padding " +String(sync_pkt.padding));
+      DBG("Send packet with padding " +String(sync_pkt.padding));
       
       for (int i = 0; i < repeat; i++) {
         if (i > 0) delay(d);
@@ -233,9 +244,16 @@ class RFManager
       sync_pkt_changed = true;
     }
 
+    void setAjdust(bool value)
+    {
+      sync_pkt.adjust_active = (uint8_t)value;
+      sync_pkt_changed = true;
+    }
+    
     void setLFO(int id, uint8_t value)
     {
       if (id < 0 || id >= 2) return;
+      DBG("Set LFO "+String(id)+" : "+String(value));
       sync_pkt.adjust.lfo[id] = value;
       sync_pkt_changed = true;
     }
@@ -243,6 +261,7 @@ class RFManager
     void setSeed(int id, uint32_t value)
     {
       if (id < 0 || id >= 2) return;
+      DBG("Set Seed "+String(id)+" : "+String(value));
       sync_pkt.adjust.seeds[id] = value;
       sync_pkt_changed = true;
     }
@@ -253,5 +272,11 @@ class RFManager
     void nextMode() {
       setMode((sync_pkt.mode + 1) % 10);
     }
-};
 
+
+    //DATA SYNC
+    typedef void(*RFEvent)();
+    void (*onRFData) ();
+    void setRFDataCallback (RFEvent func) { onRFData = func; }
+    static void onRFDataDefaultCallback() {}
+};
