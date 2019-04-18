@@ -55,17 +55,17 @@ class SerialManager :
 
       switch (command)
       {
-      
+
         case 's': sendCommand(SYNC_RF); break;
         case 'j':
-        {
-          CommandData d;
-          d.type = SET_GROUP;
-          if (buffer[1] >= 48 && buffer[1] <= 57) buffer[1] -= 48;
-          d.value1.intValue = buffer[1];
-          sendCommand(d);
-        }
-        break;
+          {
+            CommandData d;
+            d.type = SET_GROUP;
+            if (buffer[1] >= 48 && buffer[1] <= 57) buffer[1] -= 48;
+            d.value1.intValue = buffer[1];
+            sendCommand(d);
+          }
+          break;
         case 'w':
           {
             DBG(String("Buffer 1 is ") + (int)buffer[1]);
@@ -112,7 +112,7 @@ class SerialManager :
           }
           break;
 
-          case 'l':
+        case 'l':
           {
             CommandData d;
             d.type = SET_LFO;
@@ -123,7 +123,7 @@ class SerialManager :
           }
           break;
 
-          case 'k':
+        case 'k':
           {
             CommandData d;
             d.type = SET_SEED;
@@ -134,7 +134,7 @@ class SerialManager :
           }
           break;
 
-           case 'd':
+        case 'd':
           {
             CommandData d;
             d.type = SET_ADJUST;
@@ -143,6 +143,7 @@ class SerialManager :
             sendCommand(d);
           }
           break;
+
       }
     }
 
@@ -153,17 +154,17 @@ class SerialManager :
 
     void sendBoolValue(String name, bool value)
     {
-      Serial.println(name+" "+(value?1:0));
+      Serial.println(name + " " + (value ? 1 : 0));
     }
 
     void sendIntValue(String name, int value)
     {
-      Serial.println(name+" "+String(value));
+      Serial.println(name + " " + String(value));
     }
 
     void sendFloatValue(String name, float value)
     {
-      Serial.println(name+" "+String(value));
+      Serial.println(name + " " + String(value));
     }
 
 };

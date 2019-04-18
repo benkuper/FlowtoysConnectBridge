@@ -99,6 +99,13 @@ public:
         }else if(msg.fullMatch("/sync"))
         {
            sendCommand(SYNC_RF);
+        }else if(msg.fullMatch("/wifiSettings"))
+        {
+           CommandData d;
+            d.type = SET_WIFI_CREDENTIALS;
+            //d.value1.stringValue = msg.getString(0);
+            //d.value2.stringValue = msg.getString(1);
+            sendCommand(d);
         }else{
           char addr[32];
           msg.getAddress(addr, 0);

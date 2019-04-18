@@ -22,7 +22,7 @@ orange = 6
 class RFManager
 {
   public:
-    RFManager() : radio(17,5)
+    RFManager() : radio(4,33)
     {
       setRFDataCallback(&RFManager::onRFDataDefaultCallback);
     }
