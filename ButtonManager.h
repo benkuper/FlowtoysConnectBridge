@@ -18,9 +18,8 @@ class ButtonManager :
   public:
     ButtonManager() : CommandProvider("Button") {}
     ~ButtonManager() {}
-
-    const int buttonVals[NUM_BT_VALUES] {4096, 3955, 3520, 3240, 2980, 2837, 2707, 2608, 2414, 2346, 2281, 2222, 2152, 2107, 2057, 2015 };
-
+    
+    int buttonVals[NUM_BT_VALUES] {4096, 3955, 3520, 3240, 2980, 2837, 2707, 2608, 2414, 2346, 2281, 2222, 2152, 2107, 2057, 2015 };
 
     int buttonCounters[NUM_BUTTONS]; //debounce
 
@@ -32,7 +31,12 @@ class ButtonManager :
 
     void init()
     {
-
+      for(int i=0;i<NUM_BT_VALUES;i++)
+      {
+         buttonVals[i] = Config::instance->getButtonStateVal(i);
+         DBG("Set button state "+String(i)+" value : "+String(buttonVals[i]));
+      }
+      
       pinMode(BUTTON_PIN, INPUT);
       for (int i = 0; i < NUM_BUTTONS; i++)
       {
@@ -109,6 +113,37 @@ class ButtonManager :
         }
 
         if (millis() > timeAtPress[id] + MULTIPRESS_TIME) multipressCount[id] = 0;
+      }
+    }
+
+
+    void launchCalibration()
+    {
+      DBG("Launch Calibration");
+      for(int i=0;i<NUM_BT_VALUES;i++)
+      {
+         DBG("["+String(i)+"] Press "+String(i & 1)+" "+String((i >> 1) & 1)+" "+String((i >> 2) & 1)+" "+String((i >> 3) & 1));
+         
+         delay(2000);
+
+         DBG("Calibrating...");
+         long average = 0;
+         for(int j=0;j<200;j++)
+         {
+            average += analogRead(BUTTON_PIN);
+         }
+
+         average /= 200;
+
+         DBG("Average is "+String(average));
+           
+         Config::instance->setButtonStateVal(i, average);
+      }
+
+      for(int i=0;i<NUM_BT_VALUES;i++)
+      {
+         buttonVals[i] = Config::instance->getButtonStateVal(i);
+         DBG("Set button state "+String(i)+" value : "+String(buttonVals[i]));
       }
     }
 

@@ -1,3 +1,4 @@
+#pragma once
 #include "FastLED.h"
 
 #define DATA_PIN 25

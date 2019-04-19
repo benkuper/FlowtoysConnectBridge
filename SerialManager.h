@@ -123,17 +123,6 @@ class SerialManager :
           }
           break;
 
-        case 'k':
-          {
-            CommandData d;
-            d.type = SET_SEED;
-            if (buffer[1] >= 48 && buffer[1] <= 57) buffer[1] -= 48;
-            d.value1.intValue = buffer[1];
-            d.value2.intValue = buffer[2];
-            sendCommand(d);
-          }
-          break;
-
         case 'd':
           {
             CommandData d;
@@ -144,6 +133,16 @@ class SerialManager :
           }
           break;
 
+       case 'c': sendCommand(CALIBRATE_BUTTONS); break;
+
+       case 'a':
+       {
+        CommandData d;
+        d.type = PLAY_SHOW;
+        d.value1.stringValue = "demo.show";
+        sendCommand(d);
+       }
+       break;
       }
     }
 

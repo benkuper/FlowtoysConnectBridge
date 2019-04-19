@@ -11,12 +11,12 @@
 /*
  * 
  * GROUP IDS (may change to 1-5)
- * purple = 2
-blue = 3
-aqua =  4
-green = 5
-orange = 6
-
+ * 
+orange = 1
+green = 2
+aqua =  3
+blue = 4
+purple = 5
  */
 
 class RFManager
@@ -47,28 +47,38 @@ class RFManager
       uint32_t id;
     } currentNetworkId;
 
-    struct patterns_adjust {
-      uint8_t lfo[2];
-      uint32_t seeds[2];
-    };
-
-#pragma pack(push, 1) // prevents memory alignment from disrupting the layout and size of the network packet
-    struct syncData {
-      uint32_t padding;
-      struct patterns_adjust adjust;
-      uint8_t page;
-      uint8_t mode;
-      uint8_t adjust_active : 1;
-      uint8_t wakeup : 1;
-      uint8_t poweroff : 1;
-    } sync_pkt;
+#pragma pack(push, 1) // prevents memory alignment from disrupting the layout and size of the network packet 
+struct SyncPacket {
+    uint32_t padding;
+    
+    uint8_t lfo_active : 1;
+    uint8_t global_active : 1;
+    uint8_t lfo[4];
+    uint8_t global_intensity;
+    uint8_t global_hue;
+    uint8_t global_sat;
+    uint8_t global_val;
+    uint8_t global_palette;
+    uint8_t global_speed;
+    uint8_t global_density;
+    uint8_t page;
+    uint8_t mode;
+    uint8_t adjust_active : 1;
+    uint8_t wakeup : 1;
+    uint8_t poweroff : 1;
+    uint8_t force_reload : 1;
+    uint8_t save : 1;
+    uint8_t del : 1;
+    uint8_t alternate : 1;
+};
 #pragma pack(pop)
 
+    SyncPacket sync_pkt;
 
     void init()
     {
 
-      currentGroup = 3;
+      currentGroup = 5;
       
       radio.begin();
       radio.setAutoAck(false);
@@ -214,7 +224,7 @@ class RFManager
         sync_pkt_changed = false;
       }      
 
-      DBG("Send packet with padding " +String(sync_pkt.padding));
+      DBG("Send packet with padding " +String(sync_pkt.padding)+", lfo active ?"+String(sync_pkt.lfo_active)+", global active ?"+String(sync_pkt.global_active));
       
       for (int i = 0; i < repeat; i++) {
         if (i > 0) delay(d);
@@ -242,7 +252,7 @@ class RFManager
       DBG("Power off");
       sync_pkt.poweroff = true;
       sync_pkt_changed = true;
-     sendPacket(1, 255);
+      sendPacket(1, 255);
       sync_pkt.poweroff = false;
       sync_pkt_changed = true;
       is_on = false;
@@ -252,6 +262,7 @@ class RFManager
      void setAll(int group, int page, int mode, bool forceSend)
     {
       joinRF(group);
+      sync_pkt.adjust_active = false;
       sync_pkt.page = page;
       sync_pkt.mode = mode;
       sync_pkt_changed = true;
@@ -282,23 +293,52 @@ class RFManager
 
     void setAjdust(bool value)
     {
+      sync_pkt.lfo_active = false;
       sync_pkt.adjust_active = (uint8_t)value;
       sync_pkt_changed = true;
     }
     
-    void setLFO(int id, uint8_t value)
+    void setLFO(uint8_t lfo1, uint8_t lfo2)
     {
-      if (id < 0 || id >= 2) return;
-      DBG("Set LFO "+String(id)+" : "+String(value));
-      sync_pkt.adjust.lfo[id] = value;
+      DBG("Set LFO "+String(lfo1)+", "+String(lfo2));
+      sync_pkt.lfo_active = true;
+      sync_pkt.lfo[0] = lfo1;
+      sync_pkt.lfo[1] = lfo2;
       sync_pkt_changed = true;
     }
 
-    void setSeed(int id, uint32_t value)
+    void setIntensity(uint8_t value)
     {
-      if (id < 0 || id >= 2) return;
-      DBG("Set Seed "+String(id)+" : "+String(value));
-      sync_pkt.adjust.seeds[id] = value;
+      DBG("Set Intensity "+String(value));
+      sync_pkt.global_active = true;
+      sync_pkt.global_intensity = value;
+      sync_pkt_changed = true;
+    }
+
+    void setHSV(uint8_t h, uint8_t s, uint8_t v)
+    {
+      DBG("Set HSV "+String(h)+", "+String(s)+", "+String(v));
+      sync_pkt.global_active = true;
+      sync_pkt.global_hue = h;
+      sync_pkt.global_sat = s;
+      sync_pkt.global_val = v;
+      sync_pkt_changed = true;
+    }
+
+    void setSpeedDensity(uint8_t speed, uint8_t density)
+    {
+      DBG("Set Speed density "+String(speed)+", "+String(density));
+      sync_pkt.global_active = true;
+      sync_pkt.global_speed = speed;
+      sync_pkt.global_density = density;
+      sync_pkt_changed = true;
+    }
+
+    void setPalette(uint8_t palette)
+    {
+      DBG("Set Speed density "+String(palette));
+      sync_pkt.global_active = true;
+      sync_pkt.global_palette = palette;
       sync_pkt_changed = true;
     }
 

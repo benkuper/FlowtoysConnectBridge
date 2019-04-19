@@ -28,6 +28,10 @@ public:
   
   String getWifiPassword() { return preferences.getString("pass","notset"); }
   void setWifiPassword(String pass) { preferences.putString("pass", pass); }
+
+  int getButtonStateVal(int id) { return preferences.getInt(String("buttonValue"+String(id)).c_str(),0); }
+  void setButtonStateVal(int id, int val) { preferences.putInt(String("buttonValue"+String(id)).c_str(), val); }
+  
 };
 
 Config * Config::instance = nullptr;

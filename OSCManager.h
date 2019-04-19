@@ -4,6 +4,7 @@
 #include <OSCMessage.h>
 #include <OSCBundle.h>
 #include <OSCData.h>
+#include <ESPmDNS.h>
 #include "SerialManager.h"
 
 class OSCManager :
@@ -23,6 +24,14 @@ public:
     char buf[16];
     sprintf(buf, "IP:%d.%d.%d.%d", WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3] );
     DBG("OSC Initialized, listening on "+String(buf)+":"+String(localPort));
+
+    if (!MDNS.begin("connectbridge")) {
+        Serial.println("Error setting up MDNS responder!");
+    }else
+    {
+        MDNS.addService("_osc", "_udp", localPort);
+        Serial.println("mDNS responder started");
+    }
   }
   
   void update() {
@@ -89,12 +98,32 @@ public:
             d.value1.intValue = msg.getInt(0);
             d.value2.intValue = msg.getInt(1);
             sendCommand(d);
-        }else if(msg.fullMatch("/seed"))
+        } else if(msg.fullMatch("/intensity"))
         {
-          CommandData d;
-            d.type = SET_SEED;
+           CommandData d;
+            d.type = SET_INTENSITY;
+            d.value1.intValue = msg.getInt(0);
+            sendCommand(d);
+        } else if(msg.fullMatch("/hsv"))
+        {
+           CommandData d;
+            d.type = SET_HSV;
             d.value1.intValue = msg.getInt(0);
             d.value2.intValue = msg.getInt(1);
+            d.value3.intValue = msg.getInt(2);
+            sendCommand(d);
+        } else if(msg.fullMatch("/speedDensity"))
+        {
+           CommandData d;
+            d.type = SET_SPEEDDENSITY;
+            d.value1.intValue = msg.getInt(0);
+            d.value2.intValue = msg.getInt(1);
+            sendCommand(d);
+        } else if(msg.fullMatch("/palette"))
+        {
+           CommandData d;
+            d.type = SET_PALETTE;
+            d.value1.intValue = msg.getInt(0);
             sendCommand(d);
         }else if(msg.fullMatch("/sync"))
         {
@@ -103,8 +132,29 @@ public:
         {
            CommandData d;
             d.type = SET_WIFI_CREDENTIALS;
-            //d.value1.stringValue = msg.getString(0);
-            //d.value2.stringValue = msg.getString(1);
+            msg.getString(0,d.value1.stringValue);
+            msg.getString(1,d.value2.stringValue);
+            //sendCommand(d);
+        }else if(msg.fullMatch("/play"))
+        {
+           CommandData d;
+            d.type = PLAY_SHOW;
+            msg.getString(0,d.value1.stringValue);
+            sendCommand(d);
+        }else if(msg.fullMatch("/stop"))
+        {
+           sendCommand(STOP_SHOW);
+        }else if(msg.fullMatch("/pause"))
+        {
+           sendCommand(PAUSE_SHOW);
+        }else if(msg.fullMatch("/resume"))
+        {
+           sendCommand(RESUME_SHOW);
+        }else if(msg.fullMatch("/seek"))
+        {
+           CommandData d;
+            d.type = SEEK_SHOW;
+            d.value1.floatValue = msg.getFloat(0);
             sendCommand(d);
         }else{
           char addr[32];

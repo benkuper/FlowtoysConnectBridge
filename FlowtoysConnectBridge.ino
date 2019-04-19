@@ -8,6 +8,8 @@
 #include "SerialManager.h"
 #include "ButtonManager.h"
 #include "LedManager.h"
+#include "FileManager.h"
+#include "Player.h"
 
 SerialManager serialManager;
 Config conf;
@@ -16,6 +18,8 @@ WifiManager wifiManager;
 OSCManager oscManager;
 ButtonManager btManager;
 LedManager ledManager;
+FileManager fileManager;
+Player player;
 
 void setup()
 {
@@ -27,6 +31,8 @@ void setup()
   wifiManager.init();
   oscManager.init();
   ledManager.init();
+  fileManager.init();
+  player.init();
 
   serialManager.setCommandCallback(&commandCallback);
   btManager.setCommandCallback(&commandCallback);
@@ -44,7 +50,14 @@ void loop()
   serialManager.update();
   oscManager.update();
   rfManager.update();
+  player.update();
 
+  updateButtonsColor();
+  
+}
+
+void updateButtonsColor()
+{
   for (int i = 0; i < NUM_BUTTONS; i++)
   {
     CRGB col = CRGB::Black;
@@ -57,7 +70,6 @@ void loop()
   }
 }
 
-
 void commandCallback(String providerId, CommandProvider::CommandData data)
 {
   DBG("Got Command from " + providerId + " : " + data.type);
@@ -65,17 +77,30 @@ void commandCallback(String providerId, CommandProvider::CommandData data)
   {
     case CommandProvider::CommandType::WAKEUP: rfManager.wakeUp(); break;
     case CommandProvider::CommandType::POWEROFF: rfManager.powerOff(); break;
+    
     case CommandProvider::CommandType::SET_ALL: rfManager.setAll(data.value1.intValue, data.value2.intValue, data.value3.intValue, true); break;
+    case CommandProvider::CommandType::SET_GROUP: rfManager.joinRF(data.value1.intValue); break;
     case CommandProvider::CommandType::SET_PAGEMODE: rfManager.setPageMode(data.value1.intValue, data.value2.intValue); break;
     case CommandProvider::CommandType::SET_MODE: rfManager.setMode(data.value1.intValue); break;
     case CommandProvider::CommandType::SET_PAGE: rfManager.setPage(data.value1.intValue); break;
-    case CommandProvider::CommandType::SET_ADJUST: rfManager.setAjdust(data.value1.intValue); break;
-    case CommandProvider::CommandType::SET_LFO: rfManager.setLFO(data.value1.intValue, data.value2.intValue); break;
-    case CommandProvider::CommandType::SET_SEED: rfManager.setSeed(data.value1.intValue, data.value2.intValue); break;
     case CommandProvider::CommandType::NEXT_MODE: rfManager.nextMode(); break;
     case CommandProvider::CommandType::NEXT_PAGE: rfManager.nextPage(); break;
+    
+    case CommandProvider::CommandType::SET_ADJUST: rfManager.setAjdust(data.value1.intValue); break;
+    case CommandProvider::CommandType::SET_LFO: rfManager.setLFO(data.value1.intValue, data.value2.intValue); break;
+    case CommandProvider::CommandType::SET_INTENSITY: rfManager.setIntensity(data.value1.intValue); break;
+    case CommandProvider::CommandType::SET_HSV: rfManager.setHSV(data.value1.intValue, data.value2.intValue, data.value3.intValue); break;
+    case CommandProvider::CommandType::SET_SPEEDDENSITY: rfManager.setSpeedDensity(data.value1.intValue, data.value2.intValue); break;
+    case CommandProvider::CommandType::SET_PALETTE: rfManager.setPalette(data.value1.intValue); break;
+    
+    case CommandProvider::CommandType::PLAY_SHOW: player.play(data.value1.stringValue); break;
+    case CommandProvider::CommandType::PAUSE_SHOW: player.pause(); break;
+    case CommandProvider::CommandType::STOP_SHOW: player.stop(); break;
+    case CommandProvider::CommandType::RESUME_SHOW: player.resume(); break;
+    case CommandProvider::CommandType::SEEK_SHOW: player.seek(data.value1.floatValue); break;
+
+    
     case CommandProvider::CommandType::SYNC_RF: rfManager.syncRF(); break;
-    case CommandProvider::CommandType::SET_GROUP: rfManager.joinRF(data.value1.intValue); break;
     case CommandProvider::CommandType::SET_WIFI_CREDENTIALS:
       {
         DBG("Set Wifi credentials : " + String(data.value1.stringValue) + ":" + String(data.value2.stringValue));
@@ -84,6 +109,12 @@ void commandCallback(String providerId, CommandProvider::CommandData data)
         wifiManager.connect();
       }
       break;
+
+   case CommandProvider::CommandType::CALIBRATE_BUTTONS:
+   {
+    btManager.launchCalibration();
+   }
+   
     default: DBG("Command not handled"); break;
   }
 
@@ -101,10 +132,15 @@ void rfDataCallback()
   serialManager.sendIntValue("Mode", rfManager.sync_pkt.mode);
   serialManager.sendIntValue("WakeUp", rfManager.sync_pkt.wakeup);
   serialManager.sendIntValue("PowerOff", rfManager.sync_pkt.poweroff);
-  serialManager.sendIntValue("LFO-0", rfManager.sync_pkt.adjust.lfo[0]);
-  serialManager.sendIntValue("LFO-1", rfManager.sync_pkt.adjust.lfo[1]);
-  serialManager.sendIntValue("Seed-0", rfManager.sync_pkt.adjust.seeds[0]);
-  serialManager.sendIntValue("Seed-1", rfManager.sync_pkt.adjust.seeds[1]);
-  serialManager.sendIntValue("Adjustment", rfManager.sync_pkt.adjust_active);
+  serialManager.sendIntValue("LFO-0", rfManager.sync_pkt.lfo[0]);
+  serialManager.sendIntValue("LFO-1", rfManager.sync_pkt.lfo[1]);
+  serialManager.sendIntValue("LFO-Active", rfManager.sync_pkt.lfo_active);
+  serialManager.sendIntValue("Global-Active", rfManager.sync_pkt.global_active);
+  serialManager.sendIntValue("Hue", rfManager.sync_pkt.global_hue);
+  serialManager.sendIntValue("Saturation", rfManager.sync_pkt.global_sat);
+  serialManager.sendIntValue("Value", rfManager.sync_pkt.global_val);
+  serialManager.sendIntValue("Intensity", rfManager.sync_pkt.global_intensity);
+  serialManager.sendIntValue("Speed", rfManager.sync_pkt.global_speed);
+  serialManager.sendIntValue("Density", rfManager.sync_pkt.global_density);
 #endif
 }
