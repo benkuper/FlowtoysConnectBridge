@@ -4,10 +4,10 @@
 #include <SD.h>
 #include <ArduinoJson.h>
 
-#define SDSPEED 27000000
+#define SDSPEED 10000000
 
 #define SCK_PIN 14
-#define MISO_PIN 12
+#define MISO_PIN 21
 #define MOSI_PIN 13
 #define CS_PIN 15
 
@@ -24,6 +24,10 @@ public:
 
    void init()
    {
+      pinMode(SCK_PIN,INPUT_PULLUP); 
+      pinMode(MISO_PIN,INPUT_PULLUP); 
+      pinMode(MOSI_PIN,INPUT_PULLUP); 
+      pinMode(CS_PIN,INPUT_PULLUP); 
       spiSD.begin(SCK_PIN, MISO_PIN, MOSI_PIN, CS_PIN);//SCK,MISO,MOSI,ss
       
       if(SD.begin( CS_PIN, spiSD, SDSPEED))

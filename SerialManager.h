@@ -57,7 +57,39 @@ class SerialManager :
       {
 
         case 's': sendCommand(SYNC_RF); break;
-        case 'j':
+
+          case 'n':
+          {
+            CommandData d;
+            d.type = SET_WIFI_CREDENTIALS;
+            d.value1.stringValue = "flowspace";
+            d.value2.stringValue = "flowarts";
+            sendCommand(d);
+          }
+          break;
+
+
+        case 'w':
+          {
+            DBG(String("Buffer 1 is ") + (int)buffer[1]);
+            if (buffer[1] == 0 || buffer[1] == '0') sendCommand(POWEROFF); //either with bytes or char
+            else sendCommand(WAKEUP);
+          }
+          break;
+       
+         case 'c': sendCommand(CALIBRATE_BUTTONS); break;
+  
+         case 'a':
+         {
+          CommandData d;
+          d.type = PLAY_SHOW;
+          d.value1.stringValue = "demo.show";
+          sendCommand(d);
+         }
+         break;
+        }
+          
+        /*case 'j':
           {
             CommandData d;
             d.type = SET_GROUP;
@@ -66,14 +98,7 @@ class SerialManager :
             sendCommand(d);
           }
           break;
-        case 'w':
-          {
-            DBG(String("Buffer 1 is ") + (int)buffer[1]);
-            if (buffer[1] == 0 || buffer[1] == '0') sendCommand(POWEROFF); //either with bytes or char
-            else sendCommand(WAKEUP);
-          }
-          break;
-
+          
         case 'p':
           {
             if (buffer[1] == '+') sendCommand(NEXT_PAGE);
@@ -102,16 +127,7 @@ class SerialManager :
           }
           break;
 
-        case 'n':
-          {
-            CommandData d;
-            d.type = SET_WIFI_CREDENTIALS;
-            d.value1.stringValue = "flowspace";
-            d.value2.stringValue = "flowarts";
-            sendCommand(d);
-          }
-          break;
-
+      
         case 'l':
           {
             CommandData d;
@@ -132,18 +148,8 @@ class SerialManager :
             sendCommand(d);
           }
           break;
-
-       case 'c': sendCommand(CALIBRATE_BUTTONS); break;
-
-       case 'a':
-       {
-        CommandData d;
-        d.type = PLAY_SHOW;
-        d.value1.stringValue = "demo.show";
-        sendCommand(d);
-       }
-       break;
-      }
+        */
+      
     }
 
     void sendTrigger(String name)

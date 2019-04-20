@@ -23,7 +23,6 @@ Player player;
 
 void setup()
 {
-
   serialManager.init();
   conf.init();
   rfManager.init();
@@ -37,6 +36,7 @@ void setup()
   serialManager.setCommandCallback(&commandCallback);
   btManager.setCommandCallback(&commandCallback);
   oscManager.setCommandCallback(&commandCallback);
+  oscManager.setPatternCallback(&patternCallback);
 
   rfManager.setRFDataCallback(&rfDataCallback);
 
@@ -70,6 +70,12 @@ void updateButtonsColor()
   }
 }
 
+
+void patternCallback(String providerId, CommandProvider::PatternData data)
+{
+  rfManager.setPattern(data);
+}
+
 void commandCallback(String providerId, CommandProvider::CommandData data)
 {
   DBG("Got Command from " + providerId + " : " + data.type);
@@ -77,7 +83,8 @@ void commandCallback(String providerId, CommandProvider::CommandData data)
   {
     case CommandProvider::CommandType::WAKEUP: rfManager.wakeUp(); break;
     case CommandProvider::CommandType::POWEROFF: rfManager.powerOff(); break;
-    
+
+    /*
     case CommandProvider::CommandType::SET_ALL: rfManager.setAll(data.value1.intValue, data.value2.intValue, data.value3.intValue, true); break;
     case CommandProvider::CommandType::SET_GROUP: rfManager.joinRF(data.value1.intValue); break;
     case CommandProvider::CommandType::SET_PAGEMODE: rfManager.setPageMode(data.value1.intValue, data.value2.intValue); break;
@@ -92,6 +99,7 @@ void commandCallback(String providerId, CommandProvider::CommandData data)
     case CommandProvider::CommandType::SET_HSV: rfManager.setHSV(data.value1.intValue, data.value2.intValue, data.value3.intValue); break;
     case CommandProvider::CommandType::SET_SPEEDDENSITY: rfManager.setSpeedDensity(data.value1.intValue, data.value2.intValue); break;
     case CommandProvider::CommandType::SET_PALETTE: rfManager.setPalette(data.value1.intValue); break;
+    */
     
     case CommandProvider::CommandType::PLAY_SHOW: player.play(data.value1.stringValue); break;
     case CommandProvider::CommandType::PAUSE_SHOW: player.pause(); break;
@@ -100,7 +108,7 @@ void commandCallback(String providerId, CommandProvider::CommandData data)
     case CommandProvider::CommandType::SEEK_SHOW: player.seek(data.value1.floatValue); break;
 
     
-    case CommandProvider::CommandType::SYNC_RF: rfManager.syncRF(); break;
+    //case CommandProvider::CommandType::SYNC_RF: rfManager.syncRF(); break;
     case CommandProvider::CommandType::SET_WIFI_CREDENTIALS:
       {
         DBG("Set Wifi credentials : " + String(data.value1.stringValue) + ":" + String(data.value2.stringValue));
@@ -126,6 +134,7 @@ void rfDataCallback()
 {
 
   //DBG("RF Data callback");
+  /*
 #if(SERIAL_SYNC)
   serialManager.sendTrigger("Changed");
   serialManager.sendIntValue("Page", rfManager.sync_pkt.page);
@@ -143,4 +152,5 @@ void rfDataCallback()
   serialManager.sendIntValue("Speed", rfManager.sync_pkt.global_speed);
   serialManager.sendIntValue("Density", rfManager.sync_pkt.global_density);
 #endif
+*/
 }
