@@ -18,7 +18,7 @@
 */
 
 #define MAX_PRIVATE_GROUPS 10
-#define SEND_TIME 30 //ms
+#define SEND_TIME 1000 //ms
 
 class RFManager
 {
@@ -29,6 +29,9 @@ class RFManager
     RF24 radio; //CE and CS pins for SPI bus on NRF24+
     RFGroup publicGroups[5];
     RFGroup privateGroups[MAX_PRIVATE_GROUPS];
+
+    uint8_t address[5] = { 0x01, 0x07, 0xf1, 0, 0 };
+    SyncPacket receivingPacket;
     
     long lastSendTime = 0;
     
@@ -47,9 +50,9 @@ class RFManager
       {
         sendPackets();
         lastSendTime = millis();
-      }
+     }
       
-      //receivePacket();
+      receivePacket();
     }
 
 
@@ -59,9 +62,14 @@ class RFManager
       radio.setAutoAck(false);
       radio.setDataRate(RF24_250KBPS);
       radio.setChannel(2);
-      radio.setAddressWidth(5);
+      radio.setAddressWidth(3);
       radio.setPayloadSize(sizeof(SyncPacket));
       radio.setCRCLength(RF24_CRC_16);
+
+      radio.stopListening();
+      radio.openReadingPipe(1, address);
+      radio.openWritingPipe(address);
+      radio.startListening();
       
       //radio.disableCRC();
       //radio.enableDynamicPayloads();
@@ -76,7 +84,9 @@ class RFManager
 
     void sendPackets()
     {
-      for(int i=0;i<5;i++) publicGroups[i].sendPacket();
+      radio.stopListening();
+      for(int i=0;i<5;i++) publicGroups[i].sendPacket();  
+      radio.startListening();
     }
 
 
@@ -164,16 +174,25 @@ class RFManager
     */
 
     //SEND / RECEIVE
-    /*
+    
     bool receivePacket() {
 
       if ( radio.available()) {
 
         while (radio.available()) {
-          radio.read(&sync_pkt, sizeof(sync_pkt));
+          radio.read(&receivingPacket, sizeof(SyncPacket));
 
+          //reverse group
+          receivingPacket.groupID = (receivingPacket.groupID >> 8 & 0xff) | ((receivingPacket.groupID & 0xff) << 8);
+          DBG("Received packet with groupID : "+String(receivingPacket.groupID)+", padding "+String(receivingPacket.padding)+", "+String(receivingPacket.page)+", "+String(receivingPacket.mode) );
 
-          if (sync_pkt.padding == current_counter) continue;
+          if(receivingPacket.groupID >= 1 && receivingPacket.groupID <= 5)
+          {
+            publicGroups[receivingPacket.groupID-1].updateFromPacket(receivingPacket);
+          }
+          
+          /*
+          if (receivePacket.padding == current_counter) continue;
           current_counter = sync_pkt.padding;
 
           DBG("Received packet with padding : " + String(sync_pkt.padding));
@@ -183,17 +202,17 @@ class RFManager
           }
           if (sync_pkt.poweroff && !sync_pkt.wakeup) {
             is_on = false;
-          }
+          }*/
 
           onRFData();
         }
 
         return true;
       }
-      else
-        return false;
+
+      return false;
     }
-    */
+    
     /*
     void sendPacket(int d = 0, byte repeat = 1)
     {

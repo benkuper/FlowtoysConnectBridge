@@ -3,6 +3,7 @@
 
 #pragma pack(push, 1) // prevents memory alignment from disrupting the layout and size of the network packet 
 struct SyncPacket {
+  uint16_t groupID;
   uint32_t padding;
   uint8_t lfo_active : 1;
   uint8_t global_active : 1;
@@ -39,34 +40,41 @@ class RFGroup
       groupID = gid;
       radio = r;
       packet.padding = 10000;
+      packet.groupID = ((gid & 0xff) << 8) | ((gid >> 8) & 0xff);
     
-      address[0] = groupID & 0xff;
-      address[1] = (groupID >> 8) & 0xff;
+      //address[0] = groupID & 0xff;
+      //address[1] = (groupID >> 8) & 0xff;
     }
 
     RF24 * radio = nullptr;
     int groupID = -1;
     SyncPacket packet;
-    uint8_t address[5] = { 0x00, 0x00, 0x01, 0x07, 0xf1 };
-
+    
     void setRadio()
     {
+      //DBG("Set radio "+String(address[0])+ " / "+String(address[1]));
+      /*
       radio->stopListening();
       radio->setPayloadSize(sizeof(packet));
-      //radio->openReadingPipe(1, address);
+      radio->openReadingPipe(1, address);
       radio->openWritingPipe(address);
-      //radio->startListening();
+      radio->startListening();
+      */
     }
 
     void sendPacket()
     {
       if(groupID == -1) return;
       
-      setRadio();
-      DBG("Send to group " + String(groupID) + ", page " + String(packet.page));
-      radio->write(&packet, sizeof(packet));
+      //setRadio();
+      DBG("Send to group " + String(groupID) + ", padding " + String(packet.padding)+", page "+String(packet.page)+", mode "+String(packet.mode));
+      for(int i=0;i<20;i++)
+      {
+        radio->write(&packet, sizeof(SyncPacket));
+        delay(2);
+      }
     }
-
+    
     void setData(CommandProvider::PatternData data)
     {
       packet.padding++;
@@ -90,4 +98,26 @@ class RFGroup
       DBG("Set Pattern, groupID = "+String(groupID)+", padding = "+packet.padding);
     }
 
+     void updateFromPacket(SyncPacket receivingPacket)
+     {
+      
+      packet.padding = receivingPacket.padding;
+      packet.page = receivingPacket.page;
+      packet.mode = receivingPacket.mode;
+
+/*
+      packet.lfo_active = true;
+      packet.global_active = true;
+      packet.lfo[0] = data.lfo1;
+      packet.lfo[1] = data.lfo2;
+      packet.lfo[2] = data.lfo3;
+      packet.lfo[3] = data.lfo4;
+      packet.global_intensity = data.brightness;
+      packet.global_hue = data.hueOffset;
+      packet.global_sat = data.saturation;
+      packet.global_palette = 0;
+      packet.global_speed = data.speed;
+      packet.global_density = data.density;
+      */
+     }
 };
