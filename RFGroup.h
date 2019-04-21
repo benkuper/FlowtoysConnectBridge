@@ -68,11 +68,11 @@ class RFGroup
       
       //setRadio();
       DBG("Send to group " + String(groupID) + ", padding " + String(packet.padding)+", page "+String(packet.page)+", mode "+String(packet.mode));
-      for(int i=0;i<20;i++)
-      {
+      //for(int i=0;i<20;i++)
+      //{
         radio->write(&packet, sizeof(SyncPacket));
-        delay(2);
-      }
+      //  delay(2);
+     // }
     }
     
     void setData(CommandProvider::PatternData data)
@@ -100,10 +100,9 @@ class RFGroup
 
      void updateFromPacket(SyncPacket receivingPacket)
      {
-      
       packet.padding = receivingPacket.padding;
-      packet.page = receivingPacket.page;
-      packet.mode = receivingPacket.mode;
+      //packet.page = receivingPacket.page;
+      //packet.mode = receivingPacket.mode;
 
 /*
       packet.lfo_active = true;

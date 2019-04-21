@@ -18,7 +18,7 @@
 */
 
 #define MAX_PRIVATE_GROUPS 10
-#define SEND_TIME 1000 //ms
+#define SEND_TIME 30 //ms
 
 class RFManager
 {
