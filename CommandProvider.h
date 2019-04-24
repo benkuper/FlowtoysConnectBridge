@@ -46,6 +46,8 @@ public:
       uint32_t groupID;
       uint8_t page;
       uint8_t mode;
+
+      uint8_t actives;
       
       uint8_t hueOffset;
       uint8_t saturation;

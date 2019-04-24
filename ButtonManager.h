@@ -229,7 +229,7 @@ class ButtonManager :
 
     void handleMultiPress(int id, int count)
     {
-      Serial.println("Multi press " + String(id) + " : " + String(count));
+      DBG("Multi press " + String(id) + " : " + String(count));
       switch (id)
       {
         case 0:

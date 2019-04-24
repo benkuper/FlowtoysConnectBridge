@@ -5,16 +5,21 @@
 struct SyncPacket {
   uint16_t groupID;
   uint32_t padding;
+  
   uint8_t lfo_active : 1;
-  uint8_t global_active : 1;
+  uint8_t hue_active : 1;
+  uint8_t sat_active : 1;
+  uint8_t val_active : 1;
+  uint8_t speed_active : 1;
+  uint8_t density_active : 1;
+  
   uint8_t lfo[4];
-  uint8_t global_intensity;
   uint8_t global_hue;
   uint8_t global_sat;
   uint8_t global_val;
-  uint8_t global_palette;
   uint8_t global_speed;
   uint8_t global_density;
+  uint8_t reserved[2];
   uint8_t page;
   uint8_t mode;
   uint8_t adjust_active : 1;
@@ -39,7 +44,7 @@ class RFGroup
     {
       groupID = gid;
       radio = r;
-      packet.padding = 10000;
+      packet.padding = 1;
       packet.groupID = ((gid & 0xff) << 8) | ((gid >> 8) & 0xff);
     
       //address[0] = groupID & 0xff;
@@ -67,7 +72,7 @@ class RFGroup
       if(groupID == -1) return;
       
       //setRadio();
-      DBG("Send to group " + String(groupID) + ", padding " + String(packet.padding)+", page "+String(packet.page)+", mode "+String(packet.mode));
+      //DBG("Send to group " + String(groupID) + ", padding " + String(packet.padding)+", page "+String(packet.page)+", mode "+String(packet.mode));
       //for(int i=0;i<20;i++)
       //{
         radio->write(&packet, sizeof(SyncPacket));
@@ -82,16 +87,20 @@ class RFGroup
       packet.page = data.page;
       packet.mode = data.mode;
 
-      packet.lfo_active = true;
-      packet.global_active = true;
+      packet.lfo_active = (data.actives >> 5) & 1;
+      packet.hue_active = data.actives & 1;
+      packet.sat_active = (data.actives >> 1) & 1;
+      packet.val_active = (data.actives >> 2) & 1;
+      packet.speed_active = (data.actives >> 3) & 1;
+      packet.density_active = (data.actives >> 4) & 1;
+      
       packet.lfo[0] = data.lfo1;
       packet.lfo[1] = data.lfo2;
       packet.lfo[2] = data.lfo3;
       packet.lfo[3] = data.lfo4;
-      packet.global_intensity = data.brightness;
+      packet.global_val = data.brightness;
       packet.global_hue = data.hueOffset;
       packet.global_sat = data.saturation;
-      packet.global_palette = 0;
       packet.global_speed = data.speed;
       packet.global_density = data.density;
 
@@ -100,7 +109,7 @@ class RFGroup
 
      void updateFromPacket(SyncPacket receivingPacket)
      {
-      packet.padding = receivingPacket.padding;
+      packet.padding = max(packet.padding,receivingPacket.padding);
       //packet.page = receivingPacket.page;
       //packet.mode = receivingPacket.mode;
 

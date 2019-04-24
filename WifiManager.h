@@ -41,7 +41,7 @@ public:
       bool connected = true;
       while (WiFi.status() != WL_CONNECTED) {
         DBG(".");
-        if (curTry > 5)
+        if (curTry > 20)
         {
           connected = false;
           break;

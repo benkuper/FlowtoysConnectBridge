@@ -17,7 +17,12 @@
   purple = 5
 */
 
+#define NUM_PUBLIC_GROUPS 5
+#define PUBLIC_GROUP_START_ID 1
+
 #define MAX_PRIVATE_GROUPS 10
+#define PRIVATE_GROUP_START_ID 10
+
 #define SEND_TIME 30 //ms
 
 class RFManager
@@ -32,12 +37,13 @@ class RFManager
 
     uint8_t address[5] = { 0x01, 0x07, 0xf1, 0, 0 };
     SyncPacket receivingPacket;
-    
+
     long lastSendTime = 0;
-    
+
     void init()
     {
-      for (int i = 0; i < 5; i++) publicGroups[i].setup(i+1, &radio);
+      for (int i = 0; i < NUM_PUBLIC_GROUPS; i++) publicGroups[i].setup(PUBLIC_GROUP_START_ID + i, &radio);
+      for (int i = 0; i < MAX_PRIVATE_GROUPS; i++) privateGroups[i].setup(PRIVATE_GROUP_START_ID + i, &radio);
 
       setRFDataCallback(&RFManager::onRFDataDefaultCallback);
       setupRadio();
@@ -46,12 +52,12 @@ class RFManager
 
     void update()
     {
-      if(millis() > lastSendTime + SEND_TIME) 
+      if (millis() > lastSendTime + SEND_TIME)
       {
         sendPackets();
         lastSendTime = millis();
-     }
-      
+      }
+
       receivePacket();
     }
 
@@ -70,14 +76,14 @@ class RFManager
       radio.openReadingPipe(1, address);
       radio.openWritingPipe(address);
       radio.startListening();
-      
+
       //radio.disableCRC();
       //radio.enableDynamicPayloads();
 
 
-      #if SERIAL_DEBUG
+#if SERIAL_DEBUG
       radio.printDetails();
-      #endif
+#endif
 
     }
 
@@ -85,18 +91,19 @@ class RFManager
     void sendPackets()
     {
       radio.stopListening();
-      for(int i=0;i<5;i++) publicGroups[i].sendPacket();  
+      for (int i = 0; i < NUM_PUBLIC_GROUPS; i++) publicGroups[i].sendPacket();
+      for (int i = 0; i < MAX_PRIVATE_GROUPS; i++) privateGroups[i].sendPacket();
       radio.startListening();
     }
 
 
-    
+
     void setPattern(CommandProvider::PatternData data)
     {
-      if(data.groupID >= 1 && data.groupID <= 5) //public groups
+      if (data.groupID >= 1 && data.groupID <= 5) //public groups
       {
-        publicGroups[data.groupID-1].setData(data);
-      }else
+        publicGroups[data.groupID - 1].setData(data);
+      } else
       {
         //private group
       }
@@ -174,7 +181,7 @@ class RFManager
     */
 
     //SEND / RECEIVE
-    
+
     bool receivePacket() {
 
       if ( radio.available()) {
@@ -182,27 +189,31 @@ class RFManager
         while (radio.available()) {
           radio.read(&receivingPacket, sizeof(SyncPacket));
 
-          //reverse group
-          receivingPacket.groupID = (receivingPacket.groupID >> 8 & 0xff) | ((receivingPacket.groupID & 0xff) << 8);
-          DBG("Received packet with groupID : "+String(receivingPacket.groupID)+", padding "+String(receivingPacket.padding)+", "+String(receivingPacket.page)+", "+String(receivingPacket.mode) );
-
-          if(receivingPacket.groupID >= 1 && receivingPacket.groupID <= 5)
-          {
-            publicGroups[receivingPacket.groupID-1].updateFromPacket(receivingPacket);
-          }
+          //reverse group bytes because address is reversed in rf packet but we read end of address as data to get groupID
           
-          /*
-          if (receivePacket.padding == current_counter) continue;
-          current_counter = sync_pkt.padding;
+          receivingPacket.groupID = (receivingPacket.groupID >> 8 & 0xff) | ((receivingPacket.groupID & 0xff) << 8);
+          DBG("Received packet with groupID : " + String(receivingPacket.groupID) + ", padding " + String(receivingPacket.padding) + ", " + String(receivingPacket.page) + ", " + String(receivingPacket.mode) );
 
-          DBG("Received packet with padding : " + String(sync_pkt.padding));
-
-          if (sync_pkt.wakeup && !sync_pkt.poweroff) {
-            is_on = true;
+          if (receivingPacket.groupID >= PUBLIC_GROUP_START_ID && receivingPacket.groupID < PUBLIC_GROUP_START_ID + NUM_PUBLIC_GROUPS)
+          {
+            publicGroups[receivingPacket.groupID - PUBLIC_GROUP_START_ID].updateFromPacket(receivingPacket);
+          }else if(receivingPacket.groupID >= PRIVATE_GROUP_START_ID && receivingPacket.groupID < PRIVATE_GROUP_START_ID + MAX_PRIVATE_GROUPS)
+          {
+            privateGroups[receivingPacket.groupID - PRIVATE_GROUP_START_ID].updateFromPacket(receivingPacket);
           }
-          if (sync_pkt.poweroff && !sync_pkt.wakeup) {
+
+          /*
+            if (receivePacket.padding == current_counter) continue;
+            current_counter = sync_pkt.padding;
+
+            DBG("Received packet with padding : " + String(sync_pkt.padding));
+
+            if (sync_pkt.wakeup && !sync_pkt.poweroff) {
+            is_on = true;
+            }
+            if (sync_pkt.poweroff && !sync_pkt.wakeup) {
             is_on = false;
-          }*/
+            }*/
 
           onRFData();
         }
@@ -212,10 +223,10 @@ class RFManager
 
       return false;
     }
-    
+
     /*
-    void sendPacket(int d = 0, byte repeat = 1)
-    {
+      void sendPacket(int d = 0, byte repeat = 1)
+      {
       if (sync_pkt_changed) {
         sync_pkt.padding ++;
         sync_pkt_changed = false;
@@ -229,34 +240,34 @@ class RFManager
         radio.write(&sync_pkt, sizeof(sync_pkt));
         radio.startListening();
       }
-    }*/
+      }*/
 
-    
+
 
     // COMMAND FUNCTIONS
 
     void wakeUp() {
       DBG("Wake up");
       /*sync_pkt.wakeup = true;
-      sync_pkt_changed = true;
-      sendPacket(1, 255);
-      sync_pkt.wakeup = false;
-      sync_pkt_changed = true;
-      is_on = true;*/
+        sync_pkt_changed = true;
+        sendPacket(1, 255);
+        sync_pkt.wakeup = false;
+        sync_pkt_changed = true;
+        is_on = true;*/
     }
 
     void powerOff() {
       DBG("Power off");
       /*sync_pkt.poweroff = true;
-      sync_pkt_changed = true;
-      sendPacket(1, 255);
-      sync_pkt.poweroff = false;
-      sync_pkt_changed = true;
-      is_on = false;*/
+        sync_pkt_changed = true;
+        sendPacket(1, 255);
+        sync_pkt.poweroff = false;
+        sync_pkt_changed = true;
+        is_on = false;*/
     }
 
 
-    
+
     /*
       void setAll(int group, int page, int mode, bool forceSend)
       {
