@@ -23,10 +23,10 @@ public:
   uint32_t getRFNetworkId() { return preferences.getULong("net", 0); }
   void setRFNetworkId(uint32_t netId) { preferences.putULong("net", netId); }
   
-  String getWifiSSID() { return preferences.getString("ssid","notset"); }
+  String getWifiSSID() { return preferences.getString("ssid","jonglissimo"); }
   void setWifiSSID(String ssid) { preferences.putString("ssid",ssid); }
   
-  String getWifiPassword() { return preferences.getString("pass","notset"); }
+  String getWifiPassword() { return preferences.getString("pass","lightpainting"); }
   void setWifiPassword(String pass) { preferences.putString("pass", pass); }
 
   int getButtonStateVal(int id) { return preferences.getInt(String("buttonValue"+String(id)).c_str(),0); }

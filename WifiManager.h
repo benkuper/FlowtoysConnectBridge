@@ -41,12 +41,12 @@ public:
       bool connected = true;
       while (WiFi.status() != WL_CONNECTED) {
         DBG(".");
-        if (curTry > 20)
+        if (curTry > 10)
         {
           connected = false;
           break;
         }
-        delay(500);
+        delay(200);
         curTry ++;
       }
 
@@ -58,9 +58,13 @@ public:
       DBG("Setting up AP WiFi : ConnectBridge");
       isLocal = true;
       WiFi.softAP("ConnectBridge");
+      Serial.println("Local IP : "+String(WiFi.softAPIP()[0])+
+      "."+String(WiFi.softAPIP()[1])+
+      "."+String(WiFi.softAPIP()[2])+
+      "."+String(WiFi.softAPIP()[3]));
     }
 
-    
+    WiFi.setSleep(false);
     digitalWrite(13, LOW);
   }
 };

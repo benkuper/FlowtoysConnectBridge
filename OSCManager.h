@@ -46,6 +46,8 @@ public:
       
       if (!msg.hasError()) 
       {     
+
+        Serial.println("Received message !");
         if(msg.fullMatch("/wakeUp"))
         {
             sendCommand(WAKEUP);

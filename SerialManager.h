@@ -35,6 +35,7 @@ class SerialManager :
       while (Serial.available())
       {
         byte c = Serial.read();
+        DBG("Got char : "+String(c));
         if (c == 255 || c == '\n')
         {
           parseMessage();
@@ -51,7 +52,7 @@ class SerialManager :
     void parseMessage()
     {
       char command = buffer[0];
-      //DBG("Parse Message,command is : " + String(command));
+      DBG("Parse Message,command is : " + String(command));
 
       switch (command)
       {
@@ -77,7 +78,13 @@ class SerialManager :
           }
           break;
        
-         case 'c': sendCommand(CALIBRATE_BUTTONS); break;
+         case 'c': 
+         {
+          DBG("Got calib command");
+          sendCommand(CALIBRATE_BUTTONS);
+         }
+         break;
+         
   
          case 'a':
          {
