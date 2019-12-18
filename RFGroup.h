@@ -8,13 +8,12 @@ struct SyncPacket {
   uint8_t lfo_active : 1;
   uint8_t global_active : 1;
   uint8_t lfo[4];
-  uint8_t global_intensity;
   uint8_t global_hue;
   uint8_t global_sat;
   uint8_t global_val;
-  uint8_t global_palette;
   uint8_t global_speed;
   uint8_t global_density;
+  uint8_t reserved[2];
   uint8_t page;
   uint8_t mode;
   uint8_t adjust_active : 1;
@@ -41,38 +40,16 @@ class RFGroup
       radio = r;
       packet.padding = 1;
       packet.groupID = ((gid & 0xff) << 8) | ((gid >> 8) & 0xff);
-    
-      //address[0] = groupID & 0xff;
-      //address[1] = (groupID >> 8) & 0xff;
     }
 
     RF24 * radio = nullptr;
     int groupID = -1;
     SyncPacket packet;
     
-    void setRadio()
-    {
-      //DBG("Set radio "+String(address[0])+ " / "+String(address[1]));
-      /*
-      radio->stopListening();
-      radio->setPayloadSize(sizeof(packet));
-      radio->openReadingPipe(1, address);
-      radio->openWritingPipe(address);
-      radio->startListening();
-      */
-    }
-
     void sendPacket()
     {
-      if(groupID == -1) return;
-      
-      //setRadio();
-      //DBG("Send to group " + String(groupID) + ", padding " + String(packet.padding)+", page "+String(packet.page)+", mode "+String(packet.mode));
-      //for(int i=0;i<20;i++)
-      //{
-        radio->write(&packet, sizeof(SyncPacket));
-      //  delay(2);
-     // }
+      if(groupID <= 0) return;
+      radio->write(&packet, sizeof(SyncPacket));
     }
     
     void setData(CommandProvider::PatternData data)
@@ -90,8 +67,8 @@ class RFGroup
 //      packet.density_active = (data.actives >> 4) & 1;
 
 
-      packet.lfo_active = true;
-      packet.global_active = true;
+      packet.lfo_active = data.actives & 1;//true;
+      packet.global_active = (data.actives >> 1) & 1;//true;
       
       packet.lfo[0] = data.lfo1;
       packet.lfo[1] = data.lfo2;
@@ -103,7 +80,12 @@ class RFGroup
       packet.global_speed = data.speed;
       packet.global_density = data.density;
 
-      DBG("Set Pattern, groupID = "+String(groupID)+", padding = "+packet.padding);
+      DBG("Set Pattern, groupID = "+String(groupID)+", padding = "+packet.padding
+      +", LFO : "+String(packet.lfo_active)+" > lfo0 : "+String(packet.lfo[0])
+      +", Global : "+String(packet.global_active)+" > hue : "+String(packet.global_hue)+", sat : "+String(packet.global_sat)+", val : "+String(packet.global_val)
+      +", speed : "+String(packet.global_speed)+", density : "+String(packet.global_density)
+      );
+  
     }
 
      void updateFromPacket(SyncPacket receivingPacket)
@@ -112,6 +94,13 @@ class RFGroup
       //packet.page = receivingPacket.page;
       //packet.mode = receivingPacket.mode;
 
+      DBG("LFO Active : "+String(receivingPacket.lfo_active));
+      DBG("Global Active : "+String(receivingPacket.global_active));
+      DBG("Hue : "+String(receivingPacket.global_hue));
+      DBG("Sat : "+String(receivingPacket.global_sat));
+      DBG("Val : "+String(receivingPacket.global_val));
+      DBG("LFO 0 : "+String(receivingPacket.lfo[0]));
+           
 /*
       packet.lfo_active = true;
       packet.global_active = true;

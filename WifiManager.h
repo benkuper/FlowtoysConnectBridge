@@ -41,7 +41,7 @@ public:
       bool connected = true;
       while (WiFi.status() != WL_CONNECTED) {
         DBG(".");
-        if (curTry > 10)
+        if (curTry > 20)
         {
           connected = false;
           break;
@@ -57,7 +57,7 @@ public:
     {
       DBG("Setting up AP WiFi : ConnectBridge");
       isLocal = true;
-      WiFi.softAP("ConnectBridge");
+      WiFi.softAP("ConnectBridge","connectbridge");
       Serial.println("Local IP : "+String(WiFi.softAPIP()[0])+
       "."+String(WiFi.softAPIP()[1])+
       "."+String(WiFi.softAPIP()[2])+

@@ -20,8 +20,9 @@
 #define NUM_PUBLIC_GROUPS 5
 #define PUBLIC_GROUP_START_ID 1
 
-#define MAX_PRIVATE_GROUPS 10
-#define PRIVATE_GROUP_START_ID 10
+#define MAX_PRIVATE_GROUPS 32
+
+#define AUTOADD_PRIVATES 1
 
 #define SEND_TIME 30 //ms
 
@@ -30,24 +31,33 @@ class RFManager
   public:
     RFManager() : radio(4, 33) {}
     ~RFManager() {}
-
+  
     RF24 radio; //CE and CS pins for SPI bus on NRF24+
     RFGroup publicGroups[5];
     RFGroup privateGroups[MAX_PRIVATE_GROUPS];
-
+    
     uint8_t address[5] = { 0x01, 0x07, 0xf1, 0, 0 };
     SyncPacket receivingPacket;
 
     long lastSendTime = 0;
 
+    int numActivePrivateGroups;
+    
+    bool radioIsConnected; //to implement
+
     void init()
     {
       for (int i = 0; i < NUM_PUBLIC_GROUPS; i++) publicGroups[i].setup(PUBLIC_GROUP_START_ID + i, &radio);
-      for (int i = 0; i < MAX_PRIVATE_GROUPS; i++) privateGroups[i].setup(PRIVATE_GROUP_START_ID + i, &radio);
+
+      numActivePrivateGroups = 0;
+      for (int i = 0; i < MAX_PRIVATE_GROUPS; i++) 
+      {
+        privateGroups[i].setup(Config::instance->getRFNetworkId(i), &radio);
+        if(privateGroups[i].groupID > 0) privateGroups[i]
+      }
 
       setRFDataCallback(&RFManager::onRFDataDefaultCallback);
       setupRadio();
-
     }
 
     void update()
@@ -77,16 +87,12 @@ class RFManager
       radio.openWritingPipe(address);
       radio.startListening();
 
-      //radio.disableCRC();
-      //radio.enableDynamicPayloads();
-
-
 #if SERIAL_DEBUG
       radio.printDetails();
+
 #endif
 
     }
-
 
     void sendPackets()
     {
@@ -108,80 +114,8 @@ class RFManager
         //private group
       }
     }
-
-
-
-    //NETWORK FUNCTIONS
-    /*
-      bool syncRF()
-      {
-      DBG("Synchronizing RF, put the props in page 4, mode 0");
-      currentNetworkId.id = 0;
-      int numTries = 4; //4 cycles for 6 channelss
-
-      for (int i = 0; i < numTries; i++)
-      {
-        for (int channel = 0; channel < 6; channel++)
-        {
-          DBG(String("Scanning channel ") + String(channel) + "...");
-
-          addrJ[1] = 0x50;
-          addrJ[0] = channel;
-
-          radio.stopListening();
-          radio.setPayloadSize(sizeof(rfNetId));
-          radio.openReadingPipe(1, addrJ);
-          radio.openWritingPipe(addrJ);
-          radio.startListening();
-
-          if (!radio.available()) {
-            delay(200);
-          }
-
-          if (radio.available()) {
-            radio.read(&currentNetworkId, sizeof(sync_pkt));
-
-            if (currentNetworkId.id != 0)
-            {
-              DBG("Found RF Network with id "+ String(currentNetworkId.id));
-              Config::instance->setRFNetworkId(currentNetworkId.id);
-              joinRF(currentNetworkId.id);
-              break;
-            }
-          }
-        }
-        if(currentNetworkId.id != 0) break;
-      }
-
-      if(currentNetworkId.id == 0)
-      {
-        DBG("Could not find a RF Network");
-      }
-      return currentNetworkId.id != 0;
-      }
-
-
-      void joinRF(uint32_t id)
-      {
-      if(currentGroup == id) return;
-      currentGroup = id;
-
-      addrJ[0] = id & 0xff;
-      addrJ[1] = (id >> 8) & 0xff;
-
-      DBG("Joining RF Network with id "+String(currentGroup)+ " : "+String(addrJ[0])+", "+String(addrJ[1]));
-
-      radio.stopListening();
-      radio.setPayloadSize(sizeof(sync_pkt));
-      radio.openReadingPipe(1, addrJ);
-      radio.openWritingPipe(addrJ);
-      radio.startListening();
-
-      }
-    */
-
+    
     //SEND / RECEIVE
-
     bool receivePacket() {
 
       if ( radio.available()) {
@@ -197,23 +131,24 @@ class RFManager
           if (receivingPacket.groupID >= PUBLIC_GROUP_START_ID && receivingPacket.groupID < PUBLIC_GROUP_START_ID + NUM_PUBLIC_GROUPS)
           {
             publicGroups[receivingPacket.groupID - PUBLIC_GROUP_START_ID].updateFromPacket(receivingPacket);
-          }else if(receivingPacket.groupID >= PRIVATE_GROUP_START_ID && receivingPacket.groupID < PRIVATE_GROUP_START_ID + MAX_PRIVATE_GROUPS)
+          }else
           {
-            privateGroups[receivingPacket.groupID - PRIVATE_GROUP_START_ID].updateFromPacket(receivingPacket);
-          }
-
-          /*
-            if (receivePacket.padding == current_counter) continue;
-            current_counter = sync_pkt.padding;
-
-            DBG("Received packet with padding : " + String(sync_pkt.padding));
-
-            if (sync_pkt.wakeup && !sync_pkt.poweroff) {
-            is_on = true;
+            bool found = false;
+            for(int i=0;i<MAX_PRIVATE_GROUPS;i++)
+            {
+              if(receivingPacket.groupID == privateGroups[i].groupID)
+              {
+                privateGroups[i].updateFromPacket(receivingPacket);
+                found = true;
+                break;
+              }
             }
-            if (sync_pkt.poweroff && !sync_pkt.wakeup) {
-            is_on = false;
-            }*/
+
+            if(!found)
+            {
+              DBG("Packet from unknown group received "+String(receivingPacket.groupID));
+            }
+          }
 
           onRFData();
         }
@@ -224,24 +159,10 @@ class RFManager
       return false;
     }
 
-    /*
-      void sendPacket(int d = 0, byte repeat = 1)
-      {
-      if (sync_pkt_changed) {
-        sync_pkt.padding ++;
-        sync_pkt_changed = false;
-      }
-
-      DBG("Send packet with padding " + String(sync_pkt.padding) + ", lfo active ?" + String(sync_pkt.lfo_active) + ", global active ?" + String(sync_pkt.global_active));
-
-      for (int i = 0; i < repeat; i++) {
-        if (i > 0) delay(d);
-        radio.stopListening();
-        radio.write(&sync_pkt, sizeof(sync_pkt));
-        radio.startListening();
-      }
-      }*/
-
+    void resetPrivateGroups()
+    {
+      
+    }
 
 
     // COMMAND FUNCTIONS
@@ -265,100 +186,6 @@ class RFManager
         sync_pkt_changed = true;
         is_on = false;*/
     }
-
-
-
-    /*
-      void setAll(int group, int page, int mode, bool forceSend)
-      {
-      joinRF(group);
-      sync_pkt.adjust_active = false;
-      sync_pkt.page = page;
-      sync_pkt.mode = mode;
-      sync_pkt_changed = true;
-      if(forceSend) sendPacket(2,20);
-      }
-
-      void setPage(int page)
-      {
-      DBG("Set Page : "+String(page));
-      sync_pkt.page = page;
-      sync_pkt_changed = true;
-      }
-
-      void setMode(int mode)
-      {
-      DBG("Set Mode : "+String(mode));
-      sync_pkt.mode =  mode;
-      sync_pkt_changed = true;
-      }
-
-      void setPageMode(int page, int mode)
-      {
-      DBG("Set Page : "+String(page));
-      sync_pkt.page = page;
-      sync_pkt.mode =  mode;
-      sync_pkt_changed = true;
-      }
-
-      void setAjdust(bool value)
-      {
-      sync_pkt.lfo_active = false;
-      sync_pkt.adjust_active = (uint8_t)value;
-      sync_pkt_changed = true;
-      }
-
-      void setLFO(uint8_t lfo1, uint8_t lfo2)
-      {
-      DBG("Set LFO "+String(lfo1)+", "+String(lfo2));
-      sync_pkt.lfo_active = true;
-      sync_pkt.lfo[0] = lfo1;
-      sync_pkt.lfo[1] = lfo2;
-      sync_pkt_changed = true;
-      }
-
-      void setIntensity(uint8_t value)
-      {
-      DBG("Set Intensity "+String(value));
-      sync_pkt.global_active = true;
-      sync_pkt.global_intensity = value;
-      sync_pkt_changed = true;
-      }
-
-      void setHSV(uint8_t h, uint8_t s, uint8_t v)
-      {
-      DBG("Set HSV "+String(h)+", "+String(s)+", "+String(v));
-      sync_pkt.global_active = true;
-      sync_pkt.global_hue = h;
-      sync_pkt.global_sat = s;
-      sync_pkt.global_val = v;
-      sync_pkt_changed = true;
-      }
-
-      void setSpeedDensity(uint8_t speed, uint8_t density)
-      {
-      DBG("Set Speed density "+String(speed)+", "+String(density));
-      sync_pkt.global_active = true;
-      sync_pkt.global_speed = speed;
-      sync_pkt.global_density = density;
-      sync_pkt_changed = true;
-      }
-
-      void setPalette(uint8_t palette)
-      {
-      DBG("Set Speed density "+String(palette));
-      sync_pkt.global_active = true;
-      sync_pkt.global_palette = palette;
-      sync_pkt_changed = true;
-      }
-
-      void nextPage() {
-      setPage((sync_pkt.page + 1) % 3);
-      }
-      void nextMode() {
-      setMode((sync_pkt.mode + 1) % 10);
-      }
-    */
 
     //DATA SYNC
     typedef void(*RFEvent)();

@@ -22,24 +22,22 @@ public:
   {    
     Udp.begin(localPort);
     char buf[16];
-    sprintf(buf, "IP:%d.%d.%d.%d", WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3] );
-    DBG("OSC Initialized, listening on "+String(buf)+":"+String(localPort));
+    //sprintf(buf, "IP:%d.%d.%d.%d", WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3] );
+    DBG("OSC Initialized");// listening on "+String(buf)+":"+String(localPort));
 
-    if (!MDNS.begin("connectbridge")) {
+    /*if (!MDNS.begin("connectbridge")) {
         Serial.println("Error setting up MDNS responder!");
     }else
     {
         MDNS.addService("_osc", "_udp", localPort);
         Serial.println("mDNS responder started");
-    }
+    }*/
   }
   
   void update() {
     int size = Udp.parsePacket();
-    
     if (size > 0) {
       OSCMessage msg;
-      
       while (size--) {
         msg.fill(Udp.read());
       }

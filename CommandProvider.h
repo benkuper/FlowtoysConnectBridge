@@ -44,6 +44,7 @@ public:
     {
       String providerId;
       uint32_t groupID;
+      bool groupIsPublic;
       uint8_t page;
       uint8_t mode;
 

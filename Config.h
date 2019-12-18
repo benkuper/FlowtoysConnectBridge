@@ -17,16 +17,16 @@ public:
 
   void init()
   {
-    preferences.begin("flow", false);
+    preferences.begin("bridge", false);
   }
 
-  uint32_t getRFNetworkId() { return preferences.getULong("net", 0); }
-  void setRFNetworkId(uint32_t netId) { preferences.putULong("net", netId); }
+  uint32_t getRFNetworkId(int privateGroupIndex) { return preferences.getULong(String("privateGroup"+String(privateGroupIndex)).c_str(), 0); }
+  void setRFNetworkId(int privateGroupIndex, uint32_t groupID) { preferences.putULong(String("privateGroup"+String(privateGroupIndex)).c_str(), groupID); }
   
-  String getWifiSSID() { return preferences.getString("ssid","jonglissimo"); }
+  String getWifiSSID() { return preferences.getString("ssid","flowspace"); }
   void setWifiSSID(String ssid) { preferences.putString("ssid",ssid); }
   
-  String getWifiPassword() { return preferences.getString("pass","lightpainting"); }
+  String getWifiPassword() { return preferences.getString("pass","flowarts"); }
   void setWifiPassword(String pass) { preferences.putString("pass", pass); }
 
   int getButtonStateVal(int id) { return preferences.getInt(String("buttonValue"+String(id)).c_str(),0); }

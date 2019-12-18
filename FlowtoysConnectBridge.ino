@@ -1,44 +1,105 @@
-#define SERIAL_DEBUG 1
-#define SERIAL_SYNC 1
+
 
 #include "Config.h"
-#include "RFManager.h"
-#include "WifiManager.h"
-#include "OSCManager.h"
-#include "SerialManager.h"
-#include "ButtonManager.h"
-#include "LedManager.h"
-#include "FileManager.h"
-#include "Player.h"
-
-SerialManager serialManager;
 Config conf;
+
+#define USE_SERIAL 1
+#if USE_SERIAL
+#define SERIAL_DEBUG 1
+#endif
+
+#define USE_RF 1
+
+#define USE_WIFI 0
+#if USE_WIFI
+  #define USE_OSC 1
+#endif
+
+#define USE_BUTTONS 0
+#define USE_LEDS 0
+#define USE_FILES 0
+#define USE_PLAYER 0
+
+#if USE_SERIAL
+#include "SerialManager.h"
+SerialManager serialManager;
+#endif
+
+#if USE_RF
+#include "RFManager.h"
 RFManager rfManager;
+#endif
+
+#if USE_WIFI
+#include "WifiManager.h"
 WifiManager wifiManager;
+#if USE_OSC
+#include "OSCManager.h"
 OSCManager oscManager;
+#endif //OSC
+#endif //WIFI
+
+#if USE_BUTTONS
+#include "ButtonManager.h"
 ButtonManager btManager;
+#endif
+
+#if USE_LEDS
+#include "LedManager.h"
 LedManager ledManager;
+#endif
+
+#if USE_FILES
+#include "FileManager.h"
 FileManager fileManager;
+#endif
+
+#if USE_PLAYER
+#include "Player.h"
 Player player;
+#endif
+
 
 void setup()
 {
-  serialManager.init();
   conf.init();
-  rfManager.init();
-  btManager.init();
-  wifiManager.init();
-  oscManager.init();
-  ledManager.init();
-  fileManager.init();
-  player.init();
+  
+#if USE_SERIAL
+serialManager.init();
+serialManager.setCommandCallback(&commandCallback);
+serialManager.setPatternCallback(&patternCallback);
+#endif
 
-  serialManager.setCommandCallback(&commandCallback);
-  btManager.setCommandCallback(&commandCallback);
-  oscManager.setCommandCallback(&commandCallback);
-  oscManager.setPatternCallback(&patternCallback);
+#if USE_RF
+rfManager.init();
+rfManager.setRFDataCallback(&rfDataCallback);
+#endif
 
-  rfManager.setRFDataCallback(&rfDataCallback);
+#if USE_WIFI
+wifiManager.init();
+#if USE_OSC
+oscManager.init();
+oscManager.setCommandCallback(&commandCallback);
+oscManager.setPatternCallback(&patternCallback);
+#endif //OSC
+#endif //WIFI
+
+#if USE_BUTTONS
+btManager.init();
+btManager.setCommandCallback(&commandCallback);
+#endif
+
+#if USE_LEDS
+ledManager.init();
+#endif
+
+#if USE_FILES
+fileManager.init();
+#endif
+
+#if USE_PLAYER
+player.init();
+#endif
 
   DBG("Bridge is initialized");
 }
@@ -46,16 +107,30 @@ void setup()
 
 void loop()
 {
+#if USE_BUTTONS
   btManager.update();
-  serialManager.update();
-  oscManager.update();
-  rfManager.update();
-  player.update();
-
   updateButtonsColor();
-  
+#endif
+
+#if USE_SERIAL
+  serialManager.update();
+#endif
+
+#if USE_OSC
+  oscManager.update();
+#endif
+
+#if USE_RF
+  rfManager.update();
+#endif
+
+#if USE_PLAYER
+  player.update();
+#endif
+
 }
 
+#if USE_BUTTONS
 void updateButtonsColor()
 {
   for (int i = 0; i < NUM_BUTTONS; i++)
@@ -66,14 +141,20 @@ void updateButtonsColor()
     else if (btManager.pressed[i]) col = CRGB::Green;
 
     if (btManager.multipressCount[i] > 1) col = CHSV(btManager.multipressCount[i] * 20, 255, 255);
+#if USE_LEDS
     ledManager.setLed(i, col);
+#endif
   }
 }
+#endif
 
 
 void patternCallback(String providerId, CommandProvider::PatternData data)
 {
+  DBG("Set pattern ! "+String(data.page)+":"+String(data.mode));
+#if USE_RF
   rfManager.setPattern(data);
+#endif  
 }
 
 void commandCallback(String providerId, CommandProvider::CommandData data)
@@ -81,34 +162,23 @@ void commandCallback(String providerId, CommandProvider::CommandData data)
   DBG("Got Command from " + providerId + " : " + data.type);
   switch (data.type)
   {
+#if USE_RF
+    case CommandProvider::CommandType::SYNC_RF: rfManager.syncRF(); break;
     case CommandProvider::CommandType::WAKEUP: rfManager.wakeUp(); break;
     case CommandProvider::CommandType::POWEROFF: rfManager.powerOff(); break;
+#endif  
 
-    /*
-    case CommandProvider::CommandType::SET_ALL: rfManager.setAll(data.value1.intValue, data.value2.intValue, data.value3.intValue, true); break;
-    case CommandProvider::CommandType::SET_GROUP: rfManager.joinRF(data.value1.intValue); break;
-    case CommandProvider::CommandType::SET_PAGEMODE: rfManager.setPageMode(data.value1.intValue, data.value2.intValue); break;
-    case CommandProvider::CommandType::SET_MODE: rfManager.setMode(data.value1.intValue); break;
-    case CommandProvider::CommandType::SET_PAGE: rfManager.setPage(data.value1.intValue); break;
-    case CommandProvider::CommandType::NEXT_MODE: rfManager.nextMode(); break;
-    case CommandProvider::CommandType::NEXT_PAGE: rfManager.nextPage(); break;
-    
-    case CommandProvider::CommandType::SET_ADJUST: rfManager.setAjdust(data.value1.intValue); break;
-    case CommandProvider::CommandType::SET_LFO: rfManager.setLFO(data.value1.intValue, data.value2.intValue); break;
-    case CommandProvider::CommandType::SET_INTENSITY: rfManager.setIntensity(data.value1.intValue); break;
-    case CommandProvider::CommandType::SET_HSV: rfManager.setHSV(data.value1.intValue, data.value2.intValue, data.value3.intValue); break;
-    case CommandProvider::CommandType::SET_SPEEDDENSITY: rfManager.setSpeedDensity(data.value1.intValue, data.value2.intValue); break;
-    case CommandProvider::CommandType::SET_PALETTE: rfManager.setPalette(data.value1.intValue); break;
-    */
-    
+
+#if USE_PLAYER
     case CommandProvider::CommandType::PLAY_SHOW: player.play(data.value1.stringValue); break;
     case CommandProvider::CommandType::PAUSE_SHOW: player.pause(); break;
     case CommandProvider::CommandType::STOP_SHOW: player.stop(); break;
     case CommandProvider::CommandType::RESUME_SHOW: player.resume(); break;
     case CommandProvider::CommandType::SEEK_SHOW: player.seek(data.value1.floatValue); break;
+#endif 
 
-    
-    //case CommandProvider::CommandType::SYNC_RF: rfManager.syncRF(); break;
+
+#if USE_WIFI
     case CommandProvider::CommandType::SET_WIFI_CREDENTIALS:
       {
         DBG("Set Wifi credentials : " + String(data.value1.stringValue) + ":" + String(data.value2.stringValue));
@@ -116,12 +186,15 @@ void commandCallback(String providerId, CommandProvider::CommandData data)
         conf.setWifiPassword(data.value2.stringValue);
         wifiManager.connect();
       }
-      break;
+#endif
+    break;
 
+#if USE_BUTTONS
    case CommandProvider::CommandType::CALIBRATE_BUTTONS:
    {
-    btManager.launchCalibration();
+      btManager.launchCalibration();
    }
+#endif
    
     default: DBG("Command not handled"); break;
   }
@@ -134,7 +207,7 @@ void rfDataCallback()
 {
 
   //DBG("RF Data callback");
-  /*
+  /*                                                                                                                   
 #if(SERIAL_SYNC)
   serialManager.sendTrigger("Changed");
   serialManager.sendIntValue("Page", rfManager.sync_pkt.page);

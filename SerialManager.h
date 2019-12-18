@@ -21,7 +21,7 @@ class SerialManager :
     ~SerialManager() {}
 
     static SerialManager * instance;
-    char buffer[32];
+    char buffer[256];
     int bufferIndex = 0;
 
     void init()
@@ -35,15 +35,15 @@ class SerialManager :
       while (Serial.available())
       {
         byte c = Serial.read();
-        DBG("Got char : "+String(c));
+        //DBG("Got char : "+String(c));
         if (c == 255 || c == '\n')
         {
           parseMessage();
-          memset(buffer, 0, 32);
+          memset(buffer, 0, 255);
           bufferIndex = 0;
         } else
         {
-          if (bufferIndex < 32) buffer[bufferIndex] = c;
+          if (bufferIndex < 255) buffer[bufferIndex] = c;
           bufferIndex++;
         }
       }
@@ -57,7 +57,7 @@ class SerialManager :
       switch (command)
       {
 
-        case 's': sendCommand(SYNC_RF); break;
+         case 's': sendCommand(SYNC_RF); break;
 
           case 'n':
           {
@@ -92,6 +92,46 @@ class SerialManager :
           d.type = PLAY_SHOW;
           d.value1.stringValue = "demo.show";
           sendCommand(d);
+         }
+         break;
+
+
+         case 'p':
+         case 'P':
+         {
+          PatternData p;
+          
+          char * pch;
+          pch = strtok (&buffer[1],",");
+          String split[13];
+          int i=0;
+          while (pch != NULL && i < 13)
+          {
+            split[i] = String(pch);
+            pch = strtok (NULL, ",");
+            i++;
+          }
+          
+          p.groupID = split[0].toInt();
+          p.groupIsPublic = command == 'P';
+          
+          p.page = split[1].toInt();
+          p.mode = split[2].toInt();
+
+          p.actives = split[3].toInt();
+          
+          p.hueOffset = split[4].toInt();
+          p.saturation = split[5].toInt();
+          p.brightness = split[6].toInt();
+          p.speed = split[7].toInt();
+          p.density = split[8].toInt();
+          
+          p.lfo1 = split[9].toInt();
+          p.lfo2 = split[10].toInt();
+          p.lfo3 = split[11].toInt();
+          p.lfo4 = split[12].toInt();
+
+          sendPattern(p);
          }
          break;
         }
