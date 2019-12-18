@@ -25,6 +25,7 @@
 #define AUTOADD_PRIVATES 1
 
 #define SEND_TIME 30 //ms
+#define SYNC_TIME 5000 //ms : 5s
 
 class RFManager
 {
@@ -42,18 +43,24 @@ class RFManager
     long lastSendTime = 0;
 
     int numActivePrivateGroups;
+
+    bool syncing;
+    long timeAtSync;
     
     bool radioIsConnected; //to implement
+    
 
     void init()
     {
+      syncing = false;
+      
       for (int i = 0; i < NUM_PUBLIC_GROUPS; i++) publicGroups[i].setup(PUBLIC_GROUP_START_ID + i, &radio);
 
       numActivePrivateGroups = 0;
       for (int i = 0; i < MAX_PRIVATE_GROUPS; i++) 
       {
         privateGroups[i].setup(Config::instance->getRFNetworkId(i), &radio);
-        if(privateGroups[i].groupID > 0) privateGroups[i]
+        if(privateGroups[i].groupID > 0) numActivePrivateGroups++;
       }
 
       setRFDataCallback(&RFManager::onRFDataDefaultCallback);
@@ -68,6 +75,12 @@ class RFManager
         lastSendTime = millis();
       }
 
+      if(syncing && millis() > timeAtSync + SYNC_TIME)
+      {
+        syncing = false;
+        DBG("Finish sync, got "+String(numActivePrivateGroups)+" groups");
+      }
+      
       receivePacket();
     }
 
@@ -106,12 +119,13 @@ class RFManager
 
     void setPattern(CommandProvider::PatternData data)
     {
-      if (data.groupID >= 1 && data.groupID <= 5) //public groups
+      int index = data.groupID - 1;
+      if (data.groupIsPublic) //public groups
       {
-        publicGroups[data.groupID - 1].setData(data);
+        if(index >= 0 && NUM_PUBLIC_GROUPS) publicGroups[index].setData(data);
       } else
       {
-        //private group
+        if(index >= 0 && numActivePrivateGroups) privateGroups[index].setData(data);
       }
     }
     
@@ -134,7 +148,7 @@ class RFManager
           }else
           {
             bool found = false;
-            for(int i=0;i<MAX_PRIVATE_GROUPS;i++)
+            for(int i=0;i<numActivePrivateGroups;i++)
             {
               if(receivingPacket.groupID == privateGroups[i].groupID)
               {
@@ -146,6 +160,20 @@ class RFManager
 
             if(!found)
             {
+              if(syncing)
+              {
+               
+                if(numActivePrivateGroups < MAX_PRIVATE_GROUPS) 
+                {
+                  DBG("Adding group : "+String(receivingPacket.groupID));
+                  privateGroups[numActivePrivateGroups].setup(receivingPacket.groupID, &radio);
+                  Config::instance->setRFNetworkId(numActivePrivateGroups, receivingPacket.groupID);
+                  numActivePrivateGroups++;
+               }else
+               {
+                  DBG("Max groups reached");
+               }
+              }
               DBG("Packet from unknown group received "+String(receivingPacket.groupID));
             }
           }
@@ -159,9 +187,16 @@ class RFManager
       return false;
     }
 
+    void syncRF()
+    {
+      resetPrivateGroups();
+      timeAtSync = millis();
+      syncing = true;
+    }
+
     void resetPrivateGroups()
     {
-      
+      numActivePrivateGroups = 0;
     }
 
 

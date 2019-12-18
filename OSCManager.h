@@ -58,21 +58,22 @@ public:
           PatternData p;
           
           p.groupID = msg.getInt(0);
-          p.page = msg.getInt(1);
-          p.mode = msg.getInt(2);
+          p.groupIsPublic = msg.Int(1);
+          p.page = msg.getInt(2);
+          p.mode = msg.getInt(3);
 
-          p.actives = msg.getInt(3);
+          p.actives = msg.getInt(4);
           
-          p.hueOffset = msg.getInt(4);
-          p.saturation = msg.getInt(5);
-          p.brightness = msg.getInt(6);
-          p.speed = msg.getInt(7);
-          p.density = msg.getInt(8);
+          p.hueOffset = msg.getInt(5);
+          p.saturation = msg.getInt(6);
+          p.brightness = msg.getInt(7);
+          p.speed = msg.getInt(8);
+          p.density = msg.getInt(9);
           
-          p.lfo1 = msg.getInt(9);
-          p.lfo2 = msg.getInt(10);
-          p.lfo3 = msg.getInt(11);
-          p.lfo4 = msg.getInt(12);
+          p.lfo1 = msg.getInt(10);
+          p.lfo2 = msg.getInt(11);
+          p.lfo3 = msg.getInt(12);
+          p.lfo4 = msg.getInt(13);
 
           sendPattern(p);
         } else if(msg.fullMatch("/wifiSettings"))
