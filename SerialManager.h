@@ -52,7 +52,7 @@ class SerialManager :
     void parseMessage()
     {
       char command = buffer[0];
-      DBG("Parse Message,command is : " + String(command));
+      //DBG("Parse Message,command is : " + String(command));
 
       switch (command)
       {
