@@ -6,11 +6,12 @@ Config conf;
 #define USE_SERIAL 1
 #if USE_SERIAL
 #define SERIAL_DEBUG 1
+#define USE_BLE 1
 #endif
 
 #define USE_RF 1
 
-#define USE_WIFI 0
+#define USE_WIFI 1
 #if USE_WIFI
   #define USE_OSC 1
 #endif
@@ -23,7 +24,12 @@ Config conf;
 #if USE_SERIAL
 #include "SerialManager.h"
 SerialManager serialManager;
-#endif
+
+#if USE_BLE
+#include "BLEManager.h"
+BLEManager bleManager;
+#endif //BLE
+#endif //SERIAL
 
 #if USE_RF
 #include "RFManager.h"
@@ -62,13 +68,18 @@ Player player;
 
 void setup()
 {
+  pinMode(13, OUTPUT);
+  
   conf.init();
   
 #if USE_SERIAL
 serialManager.init();
 serialManager.setCommandCallback(&commandCallback);
 serialManager.setPatternCallback(&patternCallback);
-#endif
+#if USE_BLE
+bleManager.init();
+#endif //BLE
+#endif //SERIAL
 
 #if USE_RF
 rfManager.init();
@@ -77,8 +88,9 @@ rfManager.setRFDataCallback(&rfDataCallback);
 
 #if USE_WIFI
 wifiManager.init();
+wifiManager.setCallbackConnectionUpdate(wifiConnectionUpdate);
 #if USE_OSC
-oscManager.init();
+//wait for wifi event to init
 oscManager.setCommandCallback(&commandCallback);
 oscManager.setPatternCallback(&patternCallback);
 #endif //OSC
@@ -114,10 +126,16 @@ void loop()
 
 #if USE_SERIAL
   serialManager.update();
+#if USE_BLE
+  bleManager.update();
+#endif  
 #endif
 
+#if USE_WIFI
+  wifiManager.update();
 #if USE_OSC
   oscManager.update();
+#endif
 #endif
 
 #if USE_RF
@@ -164,8 +182,8 @@ void commandCallback(String providerId, CommandProvider::CommandData data)
   {
 #if USE_RF
     case CommandProvider::CommandType::SYNC_RF: rfManager.syncRF(); break;
-    case CommandProvider::CommandType::WAKEUP: rfManager.wakeUp(); break;
-    case CommandProvider::CommandType::POWEROFF: rfManager.powerOff(); break;
+    case CommandProvider::CommandType::WAKEUP: rfManager.wakeUp(data.value1.intValue, data.value2.intValue); break;
+    case CommandProvider::CommandType::POWEROFF: rfManager.powerOff(data.value1.intValue, data.value2.intValue); break;
 #endif  
 
 
@@ -184,7 +202,7 @@ void commandCallback(String providerId, CommandProvider::CommandData data)
         DBG("Set Wifi credentials : " + String(data.value1.stringValue) + ":" + String(data.value2.stringValue));
         conf.setWifiSSID(data.value1.stringValue);
         conf.setWifiPassword(data.value2.stringValue);
-        wifiManager.connect();
+        wifiManager.init();
       }
 #endif
     break;
@@ -201,7 +219,20 @@ void commandCallback(String providerId, CommandProvider::CommandData data)
 
 }
 
-
+#if USE_WIFI
+void wifiConnectionUpdate()
+{
+  DBG("Wifi connection update "+String(wifiManager.isConnected));
+  
+  if(wifiManager.isConnected)
+  {
+    #if USE_OSC
+      DBG("Setup OSC now");
+      oscManager.init();
+    #endif
+  }
+}
+#endif
 
 void rfDataCallback()
 {

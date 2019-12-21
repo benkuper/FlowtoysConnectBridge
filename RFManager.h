@@ -56,15 +56,18 @@ class RFManager
       
       for (int i = 0; i < NUM_PUBLIC_GROUPS; i++) publicGroups[i].setup(PUBLIC_GROUP_START_ID + i, &radio);
 
-      numActivePrivateGroups = 0;
-      for (int i = 0; i < MAX_PRIVATE_GROUPS; i++) 
+      numActivePrivateGroups = Config::instance->getNumPrivateGroups();
+      
+      for (int i = 0; i <  numActivePrivateGroups; i++) 
       {
         privateGroups[i].setup(Config::instance->getRFNetworkId(i), &radio);
-        if(privateGroups[i].groupID > 0) numActivePrivateGroups++;
+        DBG(" > Loading private group "+String(i+1)+" : "+String(privateGroups[i].groupID));
       }
 
       setRFDataCallback(&RFManager::onRFDataDefaultCallback);
       setupRadio();
+
+      DBG("RF Manager is init.");
     }
 
     void update()
@@ -78,7 +81,12 @@ class RFManager
       if(syncing && millis() > timeAtSync + SYNC_TIME)
       {
         syncing = false;
-        DBG("Finish sync, got "+String(numActivePrivateGroups)+" groups");
+        for(int i=0;i<numActivePrivateGroups;i++)
+        {
+          DBG(" > "+String(privateGroups[i].groupID));
+        }
+        Config::instance->setNumPrivateGroups(numActivePrivateGroups);
+        DBG("Finish sync, got "+String(Config::instance->getNumPrivateGroups())+" groups");
       }
       
       receivePacket();
@@ -119,13 +127,56 @@ class RFManager
 
     void setPattern(CommandProvider::PatternData data)
     {
-      int index = data.groupID - 1;
-      if (data.groupIsPublic) //public groups
+      if(data.groupID == 0)
       {
-        if(index >= 0 && NUM_PUBLIC_GROUPS) publicGroups[index].setData(data);
-      } else
+        for(int i=0;i<NUM_PUBLIC_GROUPS;i++) publicGroups[i].setData(data);
+        for(int i=0;i<numActivePrivateGroups;i++) privateGroups[i].setData(data);
+      }else
       {
-        if(index >= 0 && numActivePrivateGroups) privateGroups[index].setData(data);
+        int index = data.groupID - 1;
+        if (data.groupIsPublic) //public groups
+        {
+          if(index >= 0 && NUM_PUBLIC_GROUPS) publicGroups[index].setData(data);
+        } else
+        {
+          if(index >= 0 && numActivePrivateGroups) privateGroups[index].setData(data);
+        }
+      }
+    }
+
+    void wakeUp(int groupID, bool groupIsPublic) {
+       if(groupID == 0)
+      {
+        for(int i=0;i<NUM_PUBLIC_GROUPS;i++) publicGroups[i].wakeUp();
+        for(int i=0;i<numActivePrivateGroups;i++) privateGroups[i].wakeUp();
+      }else
+      {
+        int index = groupID - 1;
+        if (groupIsPublic) //public groups
+        {
+          if(index >= 0 && NUM_PUBLIC_GROUPS) publicGroups[index].wakeUp();
+        } else
+        {
+          if(index >= 0 && numActivePrivateGroups) privateGroups[index].wakeUp();
+        }
+      }
+    }
+
+    void powerOff(int groupID, bool groupIsPublic) {
+      if(groupID == 0)
+      {
+        for(int i=0;i<NUM_PUBLIC_GROUPS;i++) publicGroups[i].powerOff();
+        for(int i=0;i<numActivePrivateGroups;i++) privateGroups[i].powerOff();
+      }else
+      {
+        int index = groupID - 1;
+        if (groupIsPublic) //public groups
+        {
+          if(index >= 0 && NUM_PUBLIC_GROUPS) publicGroups[index].powerOff();
+        } else
+        {
+          if(index >= 0 && numActivePrivateGroups) privateGroups[index].powerOff();
+        }
       }
     }
     
@@ -162,11 +213,11 @@ class RFManager
             {
               if(syncing)
               {
-               
                 if(numActivePrivateGroups < MAX_PRIVATE_GROUPS) 
                 {
                   DBG("Adding group : "+String(receivingPacket.groupID));
                   privateGroups[numActivePrivateGroups].setup(receivingPacket.groupID, &radio);
+                  privateGroups[numActivePrivateGroups].updateFromPacket(receivingPacket);
                   Config::instance->setRFNetworkId(numActivePrivateGroups, receivingPacket.groupID);
                   numActivePrivateGroups++;
                }else
@@ -174,6 +225,7 @@ class RFManager
                   DBG("Max groups reached");
                }
               }
+              
               DBG("Packet from unknown group received "+String(receivingPacket.groupID));
             }
           }
@@ -202,25 +254,7 @@ class RFManager
 
     // COMMAND FUNCTIONS
 
-    void wakeUp() {
-      DBG("Wake up");
-      /*sync_pkt.wakeup = true;
-        sync_pkt_changed = true;
-        sendPacket(1, 255);
-        sync_pkt.wakeup = false;
-        sync_pkt_changed = true;
-        is_on = true;*/
-    }
-
-    void powerOff() {
-      DBG("Power off");
-      /*sync_pkt.poweroff = true;
-        sync_pkt_changed = true;
-        sendPacket(1, 255);
-        sync_pkt.poweroff = false;
-        sync_pkt_changed = true;
-        is_on = false;*/
-    }
+    
 
     //DATA SYNC
     typedef void(*RFEvent)();

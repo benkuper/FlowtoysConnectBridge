@@ -19,19 +19,23 @@ public:
   char address[64];
    
   void init()
-  {    
-    Udp.begin(localPort);
-    char buf[16];
-    //sprintf(buf, "IP:%d.%d.%d.%d", WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3] );
-    DBG("OSC Initialized");// listening on "+String(buf)+":"+String(localPort));
+  { 
 
-    /*if (!MDNS.begin("connectbridge")) {
-        Serial.println("Error setting up MDNS responder!");
+    DBG("Init OSC");
+    
+    Udp.stop();
+    Udp.begin(localPort);
+    
+    if (!MDNS.begin("flowtoysconnect")) {
+        DBG("Error setting up MDNS responder!");
     }else
     {
         MDNS.addService("_osc", "_udp", localPort);
-        Serial.println("mDNS responder started");
-    }*/
+        DBG("_osc._udp. flowtoysconnect zeroconf is init.");
+    }
+
+    DBG("OSC Initialized");// listening on "+String(buf)+":"+String(localPort));
+
   }
   
   void update() {
@@ -48,17 +52,29 @@ public:
         Serial.println("Received message !");
         if(msg.fullMatch("/wakeUp"))
         {
-            sendCommand(WAKEUP);
+           CommandData d;
+            d.type = WAKEUP;
+            msg.getString(0,d.value1.stringValue);
+            msg.getString(1,d.value2.stringValue);
+           d.value1.intValue = msg.getInt(0); //group
+           d.value2.intValue = msg.getInt(1); //isPublic
+           sendCommand(d);
         }else if(msg.fullMatch("/powerOff"))
         {
-            sendCommand(POWEROFF);
+            CommandData d;
+            d.type = POWEROFF;
+            msg.getString(0,d.value1.stringValue);
+            msg.getString(1,d.value2.stringValue);
+           d.value1.intValue = msg.getInt(0); //group
+           d.value2.intValue = msg.getInt(1); //isPublic
+           sendCommand(d);
         }
         else if(msg.fullMatch("/pattern"))
         {
           PatternData p;
           
           p.groupID = msg.getInt(0);
-          p.groupIsPublic = msg.Int(1);
+          p.groupIsPublic = msg.getInt(1);
           p.page = msg.getInt(2);
           p.mode = msg.getInt(3);
 

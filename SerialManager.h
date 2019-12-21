@@ -38,7 +38,7 @@ class SerialManager :
         //DBG("Got char : "+String(c));
         if (c == 255 || c == '\n')
         {
-          parseMessage();
+          parseMessage(buffer);
           memset(buffer, 0, 255);
           bufferIndex = 0;
         } else
@@ -49,154 +49,120 @@ class SerialManager :
       }
     }
 
-    void parseMessage()
+    void parseMessage(String message)
     {
-      char command = buffer[0];
-      //DBG("Parse Message,command is : " + String(command));
+      char command = message[0];
+      DBG("Parse Message,command is : " + String(command));
 
       switch (command)
       {
+        case 's': sendCommand(SYNC_RF); break;
 
-         case 's': sendCommand(SYNC_RF); break;
-
-          case 'n':
+        case 'n':
           {
             CommandData d;
             d.type = SET_WIFI_CREDENTIALS;
-            d.value1.stringValue = "flowspace";
-            d.value2.stringValue = "flowarts";
+            char * pch;
+            pch = strtok (&message[1], ",");
+            char* split[2];
+            int i = 0;
+            while (pch != NULL && i < 2)
+            {
+              split[i] = pch;
+              pch = strtok (NULL, ",");
+              i++;
+            }
+            d.value1.stringValue = split[0];
+            d.value2.stringValue = split[1];
             sendCommand(d);
           }
           break;
 
 
         case 'w':
-          {
-            DBG(String("Buffer 1 is ") + (int)buffer[1]);
-            if (buffer[1] == 0 || buffer[1] == '0') sendCommand(POWEROFF); //either with bytes or char
-            else sendCommand(WAKEUP);
-          }
-          break;
-       
-         case 'c': 
-         {
-          DBG("Got calib command");
-          sendCommand(CALIBRATE_BUTTONS);
-         }
-         break;
-         
-  
-         case 'a':
-         {
-          CommandData d;
-          d.type = PLAY_SHOW;
-          d.value1.stringValue = "demo.show";
-          sendCommand(d);
-         }
-         break;
-
-
-         case 'p':
-         case 'P':
-         {
-          PatternData p;
-          
-          char * pch;
-          pch = strtok (&buffer[1],",");
-          String split[13];
-          int i=0;
-          while (pch != NULL && i < 13)
-          {
-            split[i] = String(pch);
-            pch = strtok (NULL, ",");
-            i++;
-          }
-          
-          p.groupID = split[0].toInt();
-          p.groupIsPublic = command == 'P';
-          
-          p.page = split[1].toInt();
-          p.mode = split[2].toInt();
-
-          p.actives = split[3].toInt();
-          
-          p.hueOffset = split[4].toInt();
-          p.saturation = split[5].toInt();
-          p.brightness = split[6].toInt();
-          p.speed = split[7].toInt();
-          p.density = split[8].toInt();
-          
-          p.lfo1 = split[9].toInt();
-          p.lfo2 = split[10].toInt();
-          p.lfo3 = split[11].toInt();
-          p.lfo4 = split[12].toInt();
-
-          sendPattern(p);
-         }
-         break;
-        }
-          
-        /*case 'j':
+        case 'W':
+        case 'z':
+        case 'Z':
           {
             CommandData d;
-            d.type = SET_GROUP;
-            if (buffer[1] >= 48 && buffer[1] <= 57) buffer[1] -= 48;
-            d.value1.intValue = buffer[1];
+            d.type = (command == 'w' || command == 'W') ? WAKEUP : POWEROFF;
+
+
+            char * pch;
+            pch = strtok (&message[1], ",");
+            String split[1];
+            int i = 0;
+            while (pch != NULL && i < 1)
+            {
+              split[i] = String(pch);
+              pch = strtok (NULL, ",");
+              i++;
+            }
+
+            d.value1.intValue = split[0].toInt(); //group id
+            d.value2.intValue = (command == 'W' || command == 'Z'); //public with capital
+            sendCommand(d);
+
+          }
+          break;
+
+        case 'c':
+          {
+            DBG("Got calib command");
+            sendCommand(CALIBRATE_BUTTONS);
+          }
+          break;
+
+
+        case 'a':
+          {
+            CommandData d;
+            d.type = PLAY_SHOW;
+            d.value1.stringValue = "demo.show";
             sendCommand(d);
           }
           break;
-          
+
+
         case 'p':
+        case 'P':
           {
-            if (buffer[1] == '+') sendCommand(NEXT_PAGE);
-            else
+            PatternData p;
+
+            char * pch;
+            pch = strtok (&message[1], ",");
+            String split[13];
+            int i = 0;
+            while (pch != NULL && i < 13)
             {
-              CommandData d;
-              d.type = SET_PAGE;
-              if (buffer[1] >= 48 && buffer[1] <= 57) buffer[1] -= 48; //also works with chars 0-9
-              d.value1.intValue = buffer[1];
-              sendCommand(d);
+              split[i] = String(pch);
+              pch = strtok (NULL, ",");
+              i++;
             }
-          }
-          break;
 
-        case 'm':
-          {
-            if (buffer[1] == '+') sendCommand(NEXT_MODE);
-            else
-            {
-              CommandData d;
-              d.type = SET_MODE;
-              if (buffer[1] >= 48 && buffer[1] <= 57) buffer[1] -= 48; //also works with chars 0-9
-              d.value1.intValue = buffer[1];
-              sendCommand(d);
-            }
-          }
-          break;
+            p.groupID = split[0].toInt();
+            p.groupIsPublic = command == 'P';
 
-      
-        case 'l':
-          {
-            CommandData d;
-            d.type = SET_LFO;
-            if (buffer[1] >= 48 && buffer[1] <= 57) buffer[1] -= 48;
-            d.value1.intValue = buffer[1];
-            d.value2.intValue = buffer[2];
-            sendCommand(d);
-          }
-          break;
+            p.page = split[1].toInt();
+            p.mode = split[2].toInt();
 
-        case 'd':
-          {
-            CommandData d;
-            d.type = SET_ADJUST;
-            if (buffer[1] >= 48 && buffer[1] <= 57) buffer[1] -= 48;
-            d.value1.intValue = buffer[1];
-            sendCommand(d);
+            p.actives = split[3].toInt();
+
+            p.hueOffset = split[4].toInt();
+            p.saturation = split[5].toInt();
+            p.brightness = split[6].toInt();
+            p.speed = split[7].toInt();
+            p.density = split[8].toInt();
+
+            p.lfo1 = split[9].toInt();
+            p.lfo2 = split[10].toInt();
+            p.lfo3 = split[11].toInt();
+            p.lfo4 = split[12].toInt();
+
+            sendPattern(p);
           }
           break;
-        */
-      
+      }
     }
 
     void sendTrigger(String name)

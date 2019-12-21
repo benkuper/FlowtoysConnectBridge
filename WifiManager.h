@@ -7,64 +7,126 @@
 #include "Config.h"
 #include "SerialManager.h"
 
+#define CONNECT_TIMEOUT 5000
+#define CONNECT_TRYTIME 500
 class WifiManager
 {
 public:
-  WifiManager(){}
+  WifiManager(){  
+      setCallbackConnectionUpdate(&WifiManager::connectionUpdateDefaultCallback);
+  }
+  
   ~WifiManager(){}
 
   bool isLocal = false;
   bool isConnected = false;
   
+  String ssid;
+  String pass;
+  
+  long timeAtStartConnect;
+  long timeAtLastConnect;
+
   void init()
   {
-    connect();
-    pinMode(13, OUTPUT);
+    
+    ssid = Config::instance->getWifiSSID();
+    pass = Config::instance->getWifiPassword();
+    
+    if(isConnected)
+    {
+      DBG("Disconnecting first...");
+      WiFi.disconnect();
+      delay(100);
+    }
+
+    DBG("Connecting to Wifi "+ssid+" with password "+pass+"...");
+
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(ssid.c_str(), pass.c_str());
+    WiFi.setSleep(false);
+
+    
+    timeAtStartConnect = millis();
+    timeAtLastConnect = millis();
+    
+    isLocal = false;
+    setConnected(false);
+    
     digitalWrite(13, HIGH);
   }
 
-  void connect()
+  void update()
   {
-    isLocal = false;
-    isConnected = false;
-    
-    String ssid = Config::instance->getWifiSSID();
-    String pass = Config::instance->getWifiPassword();
-    
-    DBG("Connecting to Wifi "+ssid+" with password "+pass+"...");
+    if(isLocal || isConnected) return;
 
-    if(ssid != "notset" && pass != "notset")
-    {
-      WiFi.begin(ssid.c_str(), pass.c_str());
+    if(millis() > timeAtLastConnect + CONNECT_TRYTIME)
+    {      
+      if(WiFi.status() == WL_CONNECTED)
+      {  
+         digitalWrite(13, LOW);
+
+         DBG("WiFi Connected, local IP : "+String(WiFi.localIP()[0])+
+    "."+String(WiFi.localIP()[1])+
+    "."+String(WiFi.localIP()[2])+
+    "."+String(WiFi.localIP()[3]));
+
+        isLocal = true;
+        setConnected(true);
     
-      int curTry = 0;
-      bool connected = true;
-      while (WiFi.status() != WL_CONNECTED) {
-        DBG(".");
-        if (curTry > 20)
-        {
-          connected = false;
-          break;
-        }
-        delay(200);
-        curTry ++;
+         return;
       }
-
-      isConnected = connected;
-      DBG(isConnected?"WiFi Connected.":"WiFi Connection Error");
+      timeAtLastConnect = millis();
     }
-    if(!isConnected)
+        
+    if(millis() > timeAtStartConnect + CONNECT_TIMEOUT)
     {
-      DBG("Setting up AP WiFi : ConnectBridge");
-      isLocal = true;
-      WiFi.softAP("ConnectBridge","connectbridge");
-      Serial.println("Local IP : "+String(WiFi.softAPIP()[0])+
-      "."+String(WiFi.softAPIP()[1])+
-      "."+String(WiFi.softAPIP()[2])+
-      "."+String(WiFi.softAPIP()[3]));
+      DBG("Could not connect to "+ssid);
+      setConnected(false);
+      for(int i=0;i<5;i++)
+      {
+        digitalWrite(13, HIGH);
+        delay(50);
+        digitalWrite(13, LOW);
+        delay(50);
+      }
+      
+      setupLocal();
+    }
+  }
+
+  void setupLocal()
+  {
+    
+
+    WiFi.softAP("ConnectBridge","connectbridge");
+    Serial.println("Local IP : "+String(WiFi.softAPIP()[0])+
+    "."+String(WiFi.softAPIP()[1])+
+    "."+String(WiFi.softAPIP()[2])+
+    "."+String(WiFi.softAPIP()[3]));
+
+    isLocal = true;
+    setConnected(true);
+    
+    DBG("AP WiFi is init : ConnectBridge");
+  }
+
+  void setConnected(bool value)
+  {
+    isConnected = value;
+    onConnectionUpdate();
+  }
+
+
+  typedef void(*onConnectionUpdateEvent)();
+    void (*onConnectionUpdate) ();
+
+    void setCallbackConnectionUpdate (onConnectionUpdateEvent func) {
+      onConnectionUpdate = func;
     }
 
-    WiFi.setSleep(false);
-    digitalWrite(13, LOW);
-  }
+    static void connectionUpdateDefaultCallback()
+    {
+      //nothing
+    }
 };

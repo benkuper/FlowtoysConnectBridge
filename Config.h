@@ -22,7 +22,11 @@ public:
 
   uint32_t getRFNetworkId(int privateGroupIndex) { return preferences.getULong(String("privateGroup"+String(privateGroupIndex)).c_str(), 0); }
   void setRFNetworkId(int privateGroupIndex, uint32_t groupID) { preferences.putULong(String("privateGroup"+String(privateGroupIndex)).c_str(), groupID); }
-  
+
+  int getNumPrivateGroups() { return preferences.getInt("numGroups", 0); }
+  void setNumPrivateGroups(int num) { preferences.putInt("numGroups", num); }
+
+ 
   String getWifiSSID() { return preferences.getString("ssid","flowspace"); }
   void setWifiSSID(String ssid) { preferences.putString("ssid",ssid); }
   

@@ -58,6 +58,8 @@ class RFGroup
       
       packet.page = data.page;
       packet.mode = data.mode;
+      packet.wakeup = false;
+      packet.poweroff = false;
 //
 //      packet.lfo_active = (data.actives >> 5) & 1;
 //      packet.hue_active = data.actives & 1;
@@ -115,5 +117,18 @@ class RFGroup
       packet.global_speed = data.speed;
       packet.global_density = data.density;
       */
+     }
+
+     void wakeUp()
+     {
+        packet.padding++;
+        packet.wakeup = true;
+     }
+
+     void powerOff()
+     {
+        packet.padding++;
+        packet.poweroff = true;
+            
      }
 };
