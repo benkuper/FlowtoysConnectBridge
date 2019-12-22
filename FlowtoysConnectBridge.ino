@@ -71,20 +71,23 @@ void setup()
   pinMode(13, OUTPUT);
   
   conf.init();
-  
-#if USE_SERIAL
-serialManager.init();
-serialManager.setCommandCallback(&commandCallback);
-serialManager.setPatternCallback(&patternCallback);
-#if USE_BLE
-bleManager.init();
-#endif //BLE
-#endif //SERIAL
 
-#if USE_RF
-rfManager.init();
-rfManager.setRFDataCallback(&rfDataCallback);
-#endif
+
+  
+  #if USE_SERIAL
+  serialManager.init();
+  serialManager.setCommandCallback(&commandCallback);
+  serialManager.setPatternCallback(&patternCallback);
+  #endif //SERIAL
+
+  #if USE_RF
+  rfManager.init();
+  rfManager.setRFDataCallback(&rfDataCallback);
+  #endif
+
+  #if USE_BLE && USE_SERIAL
+  bleManager.init();
+  #endif //BLE
 
 #if USE_WIFI
 wifiManager.init();
@@ -181,7 +184,8 @@ void commandCallback(String providerId, CommandProvider::CommandData data)
   switch (data.type)
   {
 #if USE_RF
-    case CommandProvider::CommandType::SYNC_RF: rfManager.syncRF(); break;
+    case CommandProvider::CommandType::SYNC_RF: rfManager.syncRF(data.value1.floatValue); break;
+    case CommandProvider::CommandType::STOP_SYNC: rfManager.stopSync(); break;
     case CommandProvider::CommandType::WAKEUP: rfManager.wakeUp(data.value1.intValue, data.value2.intValue); break;
     case CommandProvider::CommandType::POWEROFF: rfManager.powerOff(data.value1.intValue, data.value2.intValue); break;
 #endif  
@@ -204,7 +208,19 @@ void commandCallback(String providerId, CommandProvider::CommandData data)
         conf.setWifiPassword(data.value2.stringValue);
         wifiManager.init();
       }
+      break;
 #endif
+
+    case CommandProvider::CommandType::SET_GLOBAL_CONFIG:
+    {
+      String deviceName = String(data.value1.stringValue).equals("*")?"":data.value1.stringValue;
+      conf.setDeviceName(deviceName);
+      conf.setWifiBLEMode(data.value2.intValue);
+
+      DBG("Set Device name : "+conf.getDeviceName()+" and mode wifi : "+String(conf.getWifiMode())+", BLE : "+String(conf.getBLEMode()));
+      delay(500);
+      ESP.restart();
+    }
     break;
 
 #if USE_BUTTONS

@@ -47,10 +47,22 @@ class BLEManager
     bool oldDeviceConnected = false;
     uint8_t txValue = 0;
 
+    bool isActivated;
+    
     void init()
     {
       // Create the BLE Device
-      BLEDevice::init("Flowtoys Bridge");
+
+      isActivated = Config::instance->getBLEMode();
+
+      if(!isActivated)
+      {
+        DBG("BLE not activated in preferences, not initializing");
+        return;
+      }
+      
+      String bleName ="FlowConnect "+Config::instance->getDeviceName();
+      BLEDevice::init(bleName.c_str());
 
       // Create the BLE Server
       pServer = BLEDevice::createServer();
@@ -79,11 +91,13 @@ class BLEManager
 
       // Start advertising
       pServer->getAdvertising()->start();
-      DBG("BLE is init.");
+      DBG("BLE is init with name "+bleName);
     }
 
     void update()
     {
+      if(!isActivated) return;
+      
       if (!deviceConnected && oldDeviceConnected) {
         delay(500); // give the bluetooth stack the chance to get things ready
         pServer->startAdvertising(); // restart advertising

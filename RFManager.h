@@ -25,7 +25,6 @@
 #define AUTOADD_PRIVATES 1
 
 #define SEND_TIME 30 //ms
-#define SYNC_TIME 5000 //ms : 5s
 
 class RFManager
 {
@@ -45,6 +44,7 @@ class RFManager
     int numActivePrivateGroups;
 
     bool syncing;
+    long syncTime;
     long timeAtSync;
     
     bool radioIsConnected; //to implement
@@ -78,15 +78,9 @@ class RFManager
         lastSendTime = millis();
       }
 
-      if(syncing && millis() > timeAtSync + SYNC_TIME)
+      if(syncing && syncTime > 0 && millis() > timeAtSync + syncTime)
       {
-        syncing = false;
-        for(int i=0;i<numActivePrivateGroups;i++)
-        {
-          DBG(" > "+String(privateGroups[i].groupID));
-        }
-        Config::instance->setNumPrivateGroups(numActivePrivateGroups);
-        DBG("Finish sync, got "+String(Config::instance->getNumPrivateGroups())+" groups");
+        stopSync();
       }
       
       receivePacket();
@@ -239,11 +233,25 @@ class RFManager
       return false;
     }
 
-    void syncRF()
+    void syncRF(float timeout = 0)
     {
       resetPrivateGroups();
+      syncTime = timeout*1000;
+      DBG("Start Sync with timeout :"+String(syncTime));
       timeAtSync = millis();
       syncing = true;
+    }
+
+    void stopSync()
+    {
+      syncing = false;
+      Config::instance->setNumPrivateGroups(numActivePrivateGroups);
+      DBG("Finish sync, got "+String(Config::instance->getNumPrivateGroups())+" groups");
+      
+       for(int i=0;i<numActivePrivateGroups;i++)
+      {
+        DBG(" > "+String(privateGroups[i].groupID));
+      }
     }
 
     void resetPrivateGroups()

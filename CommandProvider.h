@@ -16,7 +16,7 @@ public:
 
     String providerId;
     enum CommandType { 
-      SYNC_RF, SET_WIFI_CREDENTIALS, 
+      SYNC_RF, STOP_SYNC, SET_WIFI_CREDENTIALS, SET_GLOBAL_CONFIG,
       CALIBRATE_BUTTONS,
       WAKEUP, POWEROFF, 
       /*SET_GROUP, SET_MODE, SET_PAGE, NEXT_MODE, NEXT_PAGE, SET_ALL, SET_PAGEMODE, 
@@ -43,24 +43,24 @@ public:
     struct PatternData
     {
       String providerId;
-      uint32_t groupID;
+      uint32_t groupID = 0;
       bool groupIsPublic;
-      uint8_t page;
-      uint8_t mode;
+      uint8_t page = 0;
+      uint8_t mode = 0;
 
-      uint8_t actives;
+      uint8_t actives = 0;
       
-      uint8_t hueOffset;
-      uint8_t saturation;
-      uint8_t brightness;
+      uint8_t hueOffset = 0;
+      uint8_t saturation = 0;
+      uint8_t brightness = 0;
         
-      uint8_t speed;
-      uint8_t density;
+      uint8_t speed = 0;
+      uint8_t density = 0;
       
-      uint8_t lfo1;
-      uint8_t lfo2;
-      uint8_t lfo3;
-      uint8_t lfo4;
+      uint8_t lfo1 = 0;
+      uint8_t lfo2 = 0;
+      uint8_t lfo3 = 0;
+      uint8_t lfo4 = 0;
     };
 
     void sendCommand(CommandType type) { 

@@ -20,6 +20,7 @@ public:
 
   bool isLocal = false;
   bool isConnected = false;
+  bool isConnecting = false;
   
   String ssid;
   String pass;
@@ -27,19 +28,29 @@ public:
   long timeAtStartConnect;
   long timeAtLastConnect;
 
+  bool isActivated;
+  
   void init()
   {
-    
-    ssid = Config::instance->getWifiSSID();
-    pass = Config::instance->getWifiPassword();
-    
+    isActivated = Config::instance->getWifiMode();
+
     if(isConnected)
     {
       DBG("Disconnecting first...");
       WiFi.disconnect();
       delay(100);
     }
+    
+    if(!isActivated)
+    {
+      DBG("Wifi is not activated, not initializing");
+      return;
+    }
 
+    ssid = Config::instance->getWifiSSID();
+    pass = Config::instance->getWifiPassword();
+
+    
     DBG("Connecting to Wifi "+ssid+" with password "+pass+"...");
 
     WiFi.mode(WIFI_STA);
@@ -51,6 +62,7 @@ public:
     timeAtLastConnect = millis();
     
     isLocal = false;
+    isConnecting = true;
     setConnected(false);
     
     digitalWrite(13, HIGH);
@@ -58,6 +70,7 @@ public:
 
   void update()
   {
+    if(!isActivated) return;
     if(isLocal || isConnected) return;
 
     if(millis() > timeAtLastConnect + CONNECT_TRYTIME)
@@ -97,18 +110,19 @@ public:
 
   void setupLocal()
   {
-    
-
-    WiFi.softAP("ConnectBridge","connectbridge");
+    String softAPName = "FlowConnect "+Config::instance->getDeviceName();
+    String softAPPass = "findyourflow";
+    WiFi.softAP(softAPName.c_str(), softAPPass.c_str());
     Serial.println("Local IP : "+String(WiFi.softAPIP()[0])+
     "."+String(WiFi.softAPIP()[1])+
     "."+String(WiFi.softAPIP()[2])+
     "."+String(WiFi.softAPIP()[3]));
 
     isLocal = true;
+    isConnecting = false;
     setConnected(true);
     
-    DBG("AP WiFi is init : ConnectBridge");
+    DBG("AP WiFi is init with name "+softAPName+" , pass : "+softAPPass);
   }
 
   void setConnected(bool value)

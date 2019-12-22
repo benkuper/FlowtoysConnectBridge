@@ -68,6 +68,15 @@ public:
            d.value1.intValue = msg.getInt(0); //group
            d.value2.intValue = msg.getInt(1); //isPublic
            sendCommand(d);
+        }else if(msg.fullMatch("/sync"))
+        {
+            CommandData d;
+            d.type = SYNC_RF;
+            d.value1.floatValue = msg.getFloat(0);
+           sendCommand(d);
+        }else if(msg.fullMatch("/stopSync"))
+        {
+           sendCommand(STOP_SYNC);
         }
         else if(msg.fullMatch("/pattern"))
         {
@@ -98,7 +107,14 @@ public:
             d.type = SET_WIFI_CREDENTIALS;
             msg.getString(0,d.value1.stringValue);
             msg.getString(1,d.value2.stringValue);
-            //sendCommand(d);
+            sendCommand(d);
+        }else if(msg.fullMatch("/globalConfig"))
+        {
+            CommandData d;
+            d.type = SET_GLOBAL_CONFIG;
+            msg.getString(0, d.value1.stringValue);
+            d.value2.intValue = msg.getInt(1); //0 is wifi, 1 is BLE, 2 is both
+            sendCommand(d);
         }else if(msg.fullMatch("/play"))
         {
            CommandData d;
