@@ -185,8 +185,7 @@ class RFManager
           //reverse group bytes because address is reversed in rf packet but we read end of address as data to get groupID
           
           receivingPacket.groupID = (receivingPacket.groupID >> 8 & 0xff) | ((receivingPacket.groupID & 0xff) << 8);
-          DBG("Received packet with groupID : " + String(receivingPacket.groupID) + ", padding " + String(receivingPacket.padding) + ", " + String(receivingPacket.page) + ", " + String(receivingPacket.mode) );
-
+          
           if (receivingPacket.groupID >= PUBLIC_GROUP_START_ID && receivingPacket.groupID < PUBLIC_GROUP_START_ID + NUM_PUBLIC_GROUPS)
           {
             publicGroups[receivingPacket.groupID - PUBLIC_GROUP_START_ID].updateFromPacket(receivingPacket);
@@ -210,6 +209,9 @@ class RFManager
                 if(numActivePrivateGroups < MAX_PRIVATE_GROUPS) 
                 {
                   DBG("Adding group : "+String(receivingPacket.groupID));
+                  digitalWrite(13,HIGH);
+                  delay(50);
+                  digitalWrite(13,LOW);
                   privateGroups[numActivePrivateGroups].setup(receivingPacket.groupID, &radio);
                   privateGroups[numActivePrivateGroups].updateFromPacket(receivingPacket);
                   Config::instance->setRFNetworkId(numActivePrivateGroups, receivingPacket.groupID);
@@ -235,7 +237,6 @@ class RFManager
 
     void syncRF(float timeout = 0)
     {
-      resetPrivateGroups();
       syncTime = timeout*1000;
       DBG("Start Sync with timeout :"+String(syncTime));
       timeAtSync = millis();
@@ -251,7 +252,16 @@ class RFManager
        for(int i=0;i<numActivePrivateGroups;i++)
       {
         DBG(" > "+String(privateGroups[i].groupID));
+        digitalWrite(13,HIGH);
+        delay(50);
+        digitalWrite(13,LOW);
+        delay(50);
       }
+    }
+
+    void resetSync()
+    {
+      resetPrivateGroups();
     }
 
     void resetPrivateGroups()

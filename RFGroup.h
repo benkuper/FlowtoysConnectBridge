@@ -92,16 +92,21 @@ class RFGroup
 
      void updateFromPacket(SyncPacket receivingPacket)
      {
+      if(packet.padding != receivingPacket.padding)
+      {
+        DBG("Received packet with groupID : " + String(receivingPacket.groupID) + ", padding " + String(receivingPacket.padding));
+      }
+      
       packet.padding = max(packet.padding,receivingPacket.padding);
       //packet.page = receivingPacket.page;
       //packet.mode = receivingPacket.mode;
 
-      DBG("LFO Active : "+String(receivingPacket.lfo_active));
-      DBG("Global Active : "+String(receivingPacket.global_active));
-      DBG("Hue : "+String(receivingPacket.global_hue));
-      DBG("Sat : "+String(receivingPacket.global_sat));
-      DBG("Val : "+String(receivingPacket.global_val));
-      DBG("LFO 0 : "+String(receivingPacket.lfo[0]));
+      //DBG("LFO Active : "+String(receivingPacket.lfo_active));
+      //DBG("Global Active : "+String(receivingPacket.global_active));
+      //DBG("Hue : "+String(receivingPacket.global_hue));
+      //DBG("Sat : "+String(receivingPacket.global_sat));
+      //DBG("Val : "+String(receivingPacket.global_val));
+      //DBG("LFO 0 : "+String(receivingPacket.lfo[0]));
            
 /*
       packet.lfo_active = true;

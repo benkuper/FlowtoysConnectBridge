@@ -186,6 +186,7 @@ void commandCallback(String providerId, CommandProvider::CommandData data)
 #if USE_RF
     case CommandProvider::CommandType::SYNC_RF: rfManager.syncRF(data.value1.floatValue); break;
     case CommandProvider::CommandType::STOP_SYNC: rfManager.stopSync(); break;
+    case CommandProvider::CommandType::RESET_SYNC: rfManager.resetSync(); break;
     case CommandProvider::CommandType::WAKEUP: rfManager.wakeUp(data.value1.intValue, data.value2.intValue); break;
     case CommandProvider::CommandType::POWEROFF: rfManager.powerOff(data.value1.intValue, data.value2.intValue); break;
 #endif  

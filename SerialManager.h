@@ -70,7 +70,12 @@ class SerialManager :
           break;
 
         case 'S': sendCommand(STOP_SYNC); break;
-
+        case 'a':
+          {
+            sendCommand(RESET_SYNC);
+          }
+          break;
+          
         case 'n':
           {
             CommandData d;
@@ -128,15 +133,6 @@ class SerialManager :
           }
           break;
 
-
-        case 'a':
-          {
-            CommandData d;
-            d.type = PLAY_SHOW;
-            d.value1.stringValue = "demo.show";
-            sendCommand(d);
-          }
-          break;
 
 
         case 'p':
