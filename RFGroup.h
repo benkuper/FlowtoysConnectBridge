@@ -5,14 +5,18 @@
 struct SyncPacket {
   uint16_t groupID;
   uint32_t padding;
-  uint8_t lfo_active : 1;
-  uint8_t global_active : 1;
   uint8_t lfo[4];
   uint8_t global_hue;
   uint8_t global_sat;
   uint8_t global_val;
   uint8_t global_speed;
   uint8_t global_density;
+  uint8_t lfo_active : 1;
+  uint8_t hue_active : 1;
+  uint8_t sat_active : 1;
+  uint8_t val_active : 1;
+  uint8_t speed_active : 1;
+  uint8_t density_active : 1;
   uint8_t reserved[2];
   uint8_t page;
   uint8_t mode;
@@ -21,7 +25,7 @@ struct SyncPacket {
   uint8_t poweroff : 1;
   uint8_t force_reload : 1;
   uint8_t save : 1;
-  uint8_t del : 1;
+  uint8_t _delete : 1;
   uint8_t alternate : 1;
 };
 #pragma pack(pop)
@@ -70,8 +74,12 @@ class RFGroup
 
 
       packet.lfo_active = data.actives & 1;//true;
-      packet.global_active = (data.actives >> 1) & 1;//true;
-      
+      packet.hue_active = (data.actives >> 1) & 1;//true;
+      packet.sat_active = (data.actives >> 2) & 1;//true;
+      packet.val_active = (data.actives >> 3) & 1;//true;
+      packet.speed_active = (data.actives >> 4) & 1;//true;
+      packet.density_active = (data.actives >> 5) & 1;//true;
+
       packet.lfo[0] = data.lfo1;
       packet.lfo[1] = data.lfo2;
       packet.lfo[2] = data.lfo3;
@@ -84,7 +92,7 @@ class RFGroup
 
       DBG("Set Pattern, groupID = "+String(groupID)+", padding = "+packet.padding
       +", LFO : "+String(packet.lfo_active)+" > lfo0 : "+String(packet.lfo[0])
-      +", Global : "+String(packet.global_active)+" > hue : "+String(packet.global_hue)+", sat : "+String(packet.global_sat)+", val : "+String(packet.global_val)
+      +", Hue active : "+String(packet.hue_active)+" > hue : "+String(packet.global_hue)+", sat : "+String(packet.global_sat)+", val : "+String(packet.global_val)
       +", speed : "+String(packet.global_speed)+", density : "+String(packet.global_density)
       );
   
