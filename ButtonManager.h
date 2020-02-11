@@ -3,11 +3,7 @@
 
 //2 buttons wired on pin 22 and 23 (hardware pull up), no need to debounce, just a digital read
 
-#define BUTTON_PIN 39
-#define NUM_BUTTONS 4
-#define NUM_BT_VALUES 16
-
-#define DEBOUNCE_COUNT 100
+#define NUM_BUTTONS 2
 
 #define LONGPRESS_TIME 500 //more than 500ms is long press
 #define VERYLONGPRESS_TIME 1500
@@ -21,11 +17,9 @@ class ButtonManager :
   public:
     ButtonManager() : CommandProvider("Button") {}
     ~ButtonManager() {}
+
+    const int buttonPins[NUM_BUTTONS]{22,23}
     
-    int buttonVals[NUM_BT_VALUES] {4096, 3955, 3520, 3240, 2980, 2837, 2707, 2608, 2414, 2346, 2281, 2222, 2152, 2107, 2057, 2015 };
-
-    int buttonCounters[NUM_BUTTONS]; //debounce
-
     bool pressed[NUM_BUTTONS];
     bool longPress[NUM_BUTTONS];
     bool veryLongPress[NUM_BUTTONS];
@@ -34,16 +28,9 @@ class ButtonManager :
 
     void init()
     {
-      for(int i=0;i<NUM_BT_VALUES;i++)
-      {
-         buttonVals[i] = Config::instance->getButtonStateVal(i);
-         DBG("Set button state "+String(i)+" value : "+String(buttonVals[i]));
-      }
-      
       pinMode(BUTTON_PIN, INPUT);
       for (int i = 0; i < NUM_BUTTONS; i++)
       {
-        buttonCounters[i] = 0;
         pressed[i] = false;
         longPress[NUM_BUTTONS] = false;
         veryLongPress[NUM_BUTTONS] = false;
@@ -54,26 +41,10 @@ class ButtonManager :
 
     void update()
     {
-      int val = analogRead(BUTTON_PIN);
-
-      for (int i = 0; i < NUM_BT_VALUES; i++)
+      for(int i=0;i<NUM_BUTTONS;i++)
       {
-        if (abs(val - buttonVals[i]) < 30)
-        {
-          //Serial.print(String(val) + " / " + String(buttonVals[i]) + " : ");
-
-          for (int j = 0; j < NUM_BUTTONS; j++)
-          {
-            bool v = (i >> j) & 1;
-            buttonCounters[j] += v ? 1 : -1;
-            buttonCounters[j] = min(max(buttonCounters[j], 0), DEBOUNCE_COUNT);
-            if (buttonCounters[j] == DEBOUNCE_COUNT) setButton(j, true);
-            else if (buttonCounters[j] == 0) setButton(j, false);
-            //Serial.print(String(buttonCounters[j])+" ");
-          }
-          //Serial.println("");
-          break;
-        }
+        int val = !digitalRead(buttonPins[i]);
+        setButton(i, val);
       }
     }
 

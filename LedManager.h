@@ -3,7 +3,7 @@
 
 #define DATA_PIN 25
 #define CLOCK_PIN 26
-#define NUM_LEDS 4 //2 leds on new bridge
+#define NUM_LEDS 2
 
 class LedManager
 {
