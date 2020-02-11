@@ -124,7 +124,6 @@ void loop()
 {
 #if USE_BUTTONS
   btManager.update();
-  updateButtonsColor();
 #endif
 
 #if USE_SERIAL
