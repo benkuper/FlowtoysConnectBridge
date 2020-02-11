@@ -18,7 +18,7 @@ class ButtonManager :
     ButtonManager() : CommandProvider("Button") {}
     ~ButtonManager() {}
 
-    const int buttonPins[NUM_BUTTONS]{22,23}
+    const int buttonPins[NUM_BUTTONS]{22,23};
     
     bool pressed[NUM_BUTTONS];
     bool longPress[NUM_BUTTONS];
@@ -28,10 +28,10 @@ class ButtonManager :
 
     void init()
     {
-      pinMode(BUTTON_PIN, INPUT);
       for (int i = 0; i < NUM_BUTTONS; i++)
       {
-        pressed[i] = false;
+         pinMode(buttonPins[i], INPUT);
+         pressed[i] = false;
         longPress[NUM_BUTTONS] = false;
         veryLongPress[NUM_BUTTONS] = false;
         timeAtPress[NUM_BUTTONS] = false;
@@ -90,41 +90,7 @@ class ButtonManager :
       }
     }
 
-
-    void launchCalibration()
-    {
-      DBG("Launch Calibration");
-      for(int i=0;i<NUM_BT_VALUES;i++)
-      {
-         DBG("["+String(i)+"] Press "+String(i & 1)+" "+String((i >> 1) & 1)+" "+String((i >> 2) & 1)+" "+String((i >> 3) & 1));
-         
-         delay(2000);
-
-         DBG("Calibrating...");
-         long average = 0;
-         for(int j=0;j<200;j++)
-         {
-            average += analogRead(BUTTON_PIN);
-         }
-
-         average /= 200;
-
-         DBG("Average is "+String(average));
-           
-         Config::instance->setButtonStateVal(i, average);
-      }
-
-      for(int i=0;i<NUM_BT_VALUES;i++)
-      {
-         buttonVals[i] = Config::instance->getButtonStateVal(i);
-         DBG("Set button state "+String(i)+" value : "+String(buttonVals[i]));
-      }
-    }
-
-
     // EVENT HANDLING / COMMAND SENDNG
-
-
     void handlePressed(int id, bool value)
     {
       Serial.println("Pressed " + String(id));

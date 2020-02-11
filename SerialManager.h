@@ -125,16 +125,7 @@ class SerialManager :
           ESP.restart();
         }
         break;
-
-        case 'c':
-          {
-            DBG("Got calib command");
-            sendCommand(CALIBRATE_BUTTONS);
-          }
-          break;
-
-
-
+        
         case 'p':
         case 'P':
           {

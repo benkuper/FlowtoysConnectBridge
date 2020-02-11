@@ -16,10 +16,10 @@ Config conf;
   #define USE_OSC 1
 #endif
 
-#define USE_BUTTONS 0
-#define USE_LEDS 0
-#define USE_FILES 0
-#define USE_PLAYER 0
+#define USE_BUTTONS 1
+#define USE_LEDS 1
+#define USE_FILES 1
+#define USE_PLAYER 1
 
 #if USE_SERIAL
 #include "SerialManager.h"
@@ -223,13 +223,6 @@ void commandCallback(String providerId, CommandProvider::CommandData data)
       ESP.restart();
     }
     break;
-
-#if USE_BUTTONS
-   case CommandProvider::CommandType::CALIBRATE_BUTTONS:
-   {
-      btManager.launchCalibration();
-   }
-#endif
    
     default: DBG("Command not handled"); break;
   }
