@@ -1,5 +1,8 @@
 #pragma once
 #include "CommandProvider.h"
+
+//2 buttons wired on pin 22 and 23 (hardware pull up), no need to debounce, just a digital read
+
 #define BUTTON_PIN 39
 #define NUM_BUTTONS 4
 #define NUM_BT_VALUES 16
