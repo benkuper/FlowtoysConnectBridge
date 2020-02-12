@@ -68,6 +68,10 @@ Player player;
 
 void setup()
 {
+  //Need to activate mosfet
+  pinMode(12, OUTPUT);
+  digitalWrite(12, LOW);
+  
   pinMode(13, OUTPUT);
   
   conf.init();
