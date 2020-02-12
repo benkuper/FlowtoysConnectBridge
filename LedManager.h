@@ -12,8 +12,13 @@ public:
 
     void init()
     {
-      LEDS.addLeds<APA102, DATA_PIN, CLOCK_PIN, BGR>(leds, NUM_LEDS);
+      LEDS.addLeds<APA102, DATA_PIN, CLOCK_PIN, BGR>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
       LEDS.setBrightness(80);
+      FastLED.showColor(CRGB::Red);
+      delay(500);
+      FastLED.showColor(CRGB::Green);
+      delay(500);
+      FastLED.showColor(CRGB::Black);
     }
 
     void setLed(int id, CRGB color)
