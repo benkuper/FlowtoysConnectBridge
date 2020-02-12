@@ -12,6 +12,8 @@ public:
 
     void init()
     {
+      DBG("Led Manager init");
+      
       LEDS.addLeds<APA102, DATA_PIN, CLOCK_PIN, BGR>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
       LEDS.setBrightness(80);
       FastLED.showColor(CRGB::Red);

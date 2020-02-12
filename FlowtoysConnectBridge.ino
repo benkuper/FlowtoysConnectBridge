@@ -92,7 +92,7 @@ void setup()
 #endif
 
 #if USE_WIFI
-#if USE_LED
+#if USE_LEDS
     ledManager.setLed(0,CRGB::Blue);
 #endif
 
@@ -221,7 +221,7 @@ void wifiConnectionUpdate()
   if (wifiManager.isConnected)
   {
 
-#if USE_LED
+#if USE_LEDS
     ledManager.setLed(0,CRGB::Green);
 #endif
 
