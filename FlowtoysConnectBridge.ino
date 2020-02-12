@@ -1,5 +1,3 @@
-
-
 #include "Config.h"
 Config conf;
 
@@ -13,7 +11,7 @@ Config conf;
 
 #define USE_WIFI 1
 #if USE_WIFI
-  #define USE_OSC 1
+#define USE_OSC 1
 #endif
 
 #define USE_BUTTONS 1
@@ -71,53 +69,54 @@ void setup()
   //Need to activate mosfet
   pinMode(12, OUTPUT);
   digitalWrite(12, LOW);
-  
-  pinMode(13, OUTPUT);
-  
+
   conf.init();
 
-
-  
-  #if USE_SERIAL
+#if USE_SERIAL
   serialManager.init();
   serialManager.setCommandCallback(&commandCallback);
   serialManager.setPatternCallback(&patternCallback);
-  #endif //SERIAL
+#endif //SERIAL
 
-  #if USE_RF
+#if USE_RF
   rfManager.init();
   rfManager.setRFDataCallback(&rfDataCallback);
-  #endif
+#endif
 
-  #if USE_BLE && USE_SERIAL
+#if USE_BLE && USE_SERIAL
   bleManager.init();
-  #endif //BLE
+#endif //BLE
+
+#if USE_LEDS
+  ledManager.init();
+#endif
 
 #if USE_WIFI
-wifiManager.init();
-wifiManager.setCallbackConnectionUpdate(wifiConnectionUpdate);
+#if USE_LED
+    ledManager.setLed(0,CRGB::Blue);
+#endif
+
+  wifiManager.init();
+  wifiManager.setCallbackConnectionUpdate(wifiConnectionUpdate);
 #if USE_OSC
-//wait for wifi event to init
-oscManager.setCommandCallback(&commandCallback);
-oscManager.setPatternCallback(&patternCallback);
+  //wait for wifi event to init
+  oscManager.setCommandCallback(&commandCallback);
+  oscManager.setPatternCallback(&patternCallback);
 #endif //OSC
 #endif //WIFI
 
 #if USE_BUTTONS
-btManager.init();
-btManager.setCommandCallback(&commandCallback);
+  btManager.init();
+  btManager.setCommandCallback(&commandCallback);
 #endif
 
-#if USE_LEDS
-ledManager.init();
-#endif
 
 #if USE_FILES
-fileManager.init();
+  fileManager.init();
 #endif
 
 #if USE_PLAYER
-player.init();
+  player.init();
 #endif
 
   DBG("Bridge is initialized");
@@ -134,7 +133,7 @@ void loop()
   serialManager.update();
 #if USE_BLE
   bleManager.update();
-#endif  
+#endif
 #endif
 
 #if USE_WIFI
@@ -154,31 +153,13 @@ void loop()
 
 }
 
-#if USE_BUTTONS
-void updateButtonsColor()
-{
-  for (int i = 0; i < NUM_BUTTONS; i++)
-  {
-    CRGB col = CRGB::Black;
-    if (btManager.veryLongPress[i]) col = CRGB::Red;
-    else if (btManager.longPress[i]) col = CRGB::Orange;
-    else if (btManager.pressed[i]) col = CRGB::Green;
-
-    if (btManager.multipressCount[i] > 1) col = CHSV(btManager.multipressCount[i] * 20, 255, 255);
-#if USE_LEDS
-    ledManager.setLed(i, col);
-#endif
-  }
-}
-#endif
-
 
 void patternCallback(String providerId, CommandProvider::PatternData data)
 {
-  DBG("Set pattern ! "+String(data.page)+":"+String(data.mode));
+  DBG("Set pattern ! " + String(data.page) + ":" + String(data.mode));
 #if USE_RF
   rfManager.setPattern(data);
-#endif  
+#endif
 }
 
 void commandCallback(String providerId, CommandProvider::CommandData data)
@@ -192,7 +173,7 @@ void commandCallback(String providerId, CommandProvider::CommandData data)
     case CommandProvider::CommandType::RESET_SYNC: rfManager.resetSync(); break;
     case CommandProvider::CommandType::WAKEUP: rfManager.wakeUp(data.value1.intValue, data.value2.intValue); break;
     case CommandProvider::CommandType::POWEROFF: rfManager.powerOff(data.value1.intValue, data.value2.intValue); break;
-#endif  
+#endif
 
 
 #if USE_PLAYER
@@ -201,7 +182,7 @@ void commandCallback(String providerId, CommandProvider::CommandData data)
     case CommandProvider::CommandType::STOP_SHOW: player.stop(); break;
     case CommandProvider::CommandType::RESUME_SHOW: player.resume(); break;
     case CommandProvider::CommandType::SEEK_SHOW: player.seek(data.value1.floatValue); break;
-#endif 
+#endif
 
 
 #if USE_WIFI
@@ -216,17 +197,17 @@ void commandCallback(String providerId, CommandProvider::CommandData data)
 #endif
 
     case CommandProvider::CommandType::SET_GLOBAL_CONFIG:
-    {
-      String deviceName = String(data.value1.stringValue).equals("*")?"":data.value1.stringValue;
-      conf.setDeviceName(deviceName);
-      conf.setWifiBLEMode(data.value2.intValue);
+      {
+        String deviceName = String(data.value1.stringValue).equals("*") ? "" : data.value1.stringValue;
+        conf.setDeviceName(deviceName);
+        conf.setWifiBLEMode(data.value2.intValue);
 
-      DBG("Set Device name : "+conf.getDeviceName()+" and mode wifi : "+String(conf.getWifiMode())+", BLE : "+String(conf.getBLEMode()));
-      delay(500);
-      ESP.restart();
-    }
-    break;
-   
+        DBG("Set Device name : " + conf.getDeviceName() + " and mode wifi : " + String(conf.getWifiMode()) + ", BLE : " + String(conf.getBLEMode()));
+        delay(500);
+        ESP.restart();
+      }
+      break;
+
     default: DBG("Command not handled"); break;
   }
 
@@ -235,14 +216,19 @@ void commandCallback(String providerId, CommandProvider::CommandData data)
 #if USE_WIFI
 void wifiConnectionUpdate()
 {
-  DBG("Wifi connection update "+String(wifiManager.isConnected));
-  
-  if(wifiManager.isConnected)
+  DBG("Wifi connection update " + String(wifiManager.isConnected));
+
+  if (wifiManager.isConnected)
   {
-    #if USE_OSC
-      DBG("Setup OSC now");
-      oscManager.init();
-    #endif
+
+#if USE_LED
+    ledManager.setLed(0,CRGB::Green);
+#endif
+
+#if USE_OSC
+    DBG("Setup OSC now");
+    oscManager.init();
+#endif
   }
 }
 #endif
@@ -251,23 +237,23 @@ void rfDataCallback()
 {
 
   //DBG("RF Data callback");
-  /*                                                                                                                   
-#if(SERIAL_SYNC)
-  serialManager.sendTrigger("Changed");
-  serialManager.sendIntValue("Page", rfManager.sync_pkt.page);
-  serialManager.sendIntValue("Mode", rfManager.sync_pkt.mode);
-  serialManager.sendIntValue("WakeUp", rfManager.sync_pkt.wakeup);
-  serialManager.sendIntValue("PowerOff", rfManager.sync_pkt.poweroff);
-  serialManager.sendIntValue("LFO-0", rfManager.sync_pkt.lfo[0]);
-  serialManager.sendIntValue("LFO-1", rfManager.sync_pkt.lfo[1]);
-  serialManager.sendIntValue("LFO-Active", rfManager.sync_pkt.lfo_active);
-  serialManager.sendIntValue("Global-Active", rfManager.sync_pkt.global_active);
-  serialManager.sendIntValue("Hue", rfManager.sync_pkt.global_hue);
-  serialManager.sendIntValue("Saturation", rfManager.sync_pkt.global_sat);
-  serialManager.sendIntValue("Value", rfManager.sync_pkt.global_val);
-  serialManager.sendIntValue("Intensity", rfManager.sync_pkt.global_intensity);
-  serialManager.sendIntValue("Speed", rfManager.sync_pkt.global_speed);
-  serialManager.sendIntValue("Density", rfManager.sync_pkt.global_density);
-#endif
-*/
+  /*
+    #if(SERIAL_SYNC)
+    serialManager.sendTrigger("Changed");
+    serialManager.sendIntValue("Page", rfManager.sync_pkt.page);
+    serialManager.sendIntValue("Mode", rfManager.sync_pkt.mode);
+    serialManager.sendIntValue("WakeUp", rfManager.sync_pkt.wakeup);
+    serialManager.sendIntValue("PowerOff", rfManager.sync_pkt.poweroff);
+    serialManager.sendIntValue("LFO-0", rfManager.sync_pkt.lfo[0]);
+    serialManager.sendIntValue("LFO-1", rfManager.sync_pkt.lfo[1]);
+    serialManager.sendIntValue("LFO-Active", rfManager.sync_pkt.lfo_active);
+    serialManager.sendIntValue("Global-Active", rfManager.sync_pkt.global_active);
+    serialManager.sendIntValue("Hue", rfManager.sync_pkt.global_hue);
+    serialManager.sendIntValue("Saturation", rfManager.sync_pkt.global_sat);
+    serialManager.sendIntValue("Value", rfManager.sync_pkt.global_val);
+    serialManager.sendIntValue("Intensity", rfManager.sync_pkt.global_intensity);
+    serialManager.sendIntValue("Speed", rfManager.sync_pkt.global_speed);
+    serialManager.sendIntValue("Density", rfManager.sync_pkt.global_density);
+    #endif
+  */
 }

@@ -9,7 +9,7 @@
 #define VERYLONGPRESS_TIME 1500
 #define SHORTPRESS_TIME 500 //less than 500ms is short press
 #define MULTIPRESS_TIME 300 //each new press shorter than 500ms after the previous one will increase the multiclick
- 
+
 
 class ButtonManager :
   public CommandProvider
@@ -18,8 +18,8 @@ class ButtonManager :
     ButtonManager() : CommandProvider("Button") {}
     ~ButtonManager() {}
 
-    const int buttonPins[NUM_BUTTONS]{22,23};
-    
+    const int buttonPins[NUM_BUTTONS] {22, 23};
+
     bool pressed[NUM_BUTTONS];
     bool longPress[NUM_BUTTONS];
     bool veryLongPress[NUM_BUTTONS];
@@ -30,8 +30,8 @@ class ButtonManager :
     {
       for (int i = 0; i < NUM_BUTTONS; i++)
       {
-         pinMode(buttonPins[i], INPUT);
-         pressed[i] = false;
+        pinMode(buttonPins[i], INPUT);
+        pressed[i] = false;
         longPress[NUM_BUTTONS] = false;
         veryLongPress[NUM_BUTTONS] = false;
         timeAtPress[NUM_BUTTONS] = false;
@@ -41,7 +41,7 @@ class ButtonManager :
 
     void update()
     {
-      for(int i=0;i<NUM_BUTTONS;i++)
+      for (int i = 0; i < NUM_BUTTONS; i++)
       {
         int val = !digitalRead(buttonPins[i]);
         setButton(i, val);
@@ -55,7 +55,7 @@ class ButtonManager :
         pressed[id] = value;
         longPress[id] = false;
         veryLongPress[id] = false;
-        
+
         if (pressed[id])
         {
           timeAtPress[id] = millis();
@@ -97,9 +97,15 @@ class ButtonManager :
       switch (id)
       {
         case 0:
+#if USE_LED
+          ledManager.setLed(0, value ? CRGB::Red : CRGB::Black);
+#endif
           break;
 
         case 1:
+#if USE_LED
+          ledManager.setLed(1, value ? CRGB::Red : CRGB : Black);
+#endif
           break;
 
         case 2:
