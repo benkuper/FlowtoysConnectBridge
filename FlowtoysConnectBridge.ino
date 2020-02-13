@@ -108,7 +108,7 @@ void setup()
 
 #if USE_BUTTONS
   btManager.init();
-  btManager.setCommandCallback(&commandCallback);
+  btManager.setEventCallbacks(handlePress, handleShortPress, handleLongPress, handleVeryLongPress, handleMultiPress);
 #endif
 
 
@@ -235,6 +235,39 @@ void wifiConnectionUpdate()
 }
 #endif
 
+
+#if USE_BUTTONS
+void handlePress(int id, bool value)
+{
+  DBG("Pressed " + String(id)+":"+String(value));
+#if USE_LEDS
+  ledManager.setLed(id, value?CRGB::Red:CRGB::Blue);
+#endif
+}
+
+void handleShortPress(int id)
+{
+  DBG("Short press " + String(id));
+}
+
+void handleLongPress(int id)
+{
+  DBG("Long press " + String(id));
+}
+
+void handleVeryLongPress(int id)
+{
+  DBG("Very long press " + String(id));
+}
+
+void handleMultiPress(int id, int count)
+{
+  DBG("Multi press " + String(id) + " : " + String(count));
+}
+#endif
+
+
+#if USE_RF
 void rfDataCallback()
 {
 
@@ -259,3 +292,4 @@ void rfDataCallback()
     #endif
   */
 }
+#endif

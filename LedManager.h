@@ -23,6 +23,7 @@ public:
 
     void setLed(int id, CRGB color)
     {
+      DBG("Set led "+String(id));
       if (id < 0 || id >= NUM_LEDS) return;
       leds[id] = color;
       LEDS.show();

@@ -11,11 +11,19 @@
 #define MULTIPRESS_TIME 300 //each new press shorter than 500ms after the previous one will increase the multiclick
 
 
-class ButtonManager :
-  public CommandProvider
+class ButtonManager
 {
   public:
-    ButtonManager() : CommandProvider("Button") {}
+    ButtonManager()
+    {
+      setEventCallbacks(&ButtonManager::buttonPressDefaultEvent,
+                        &ButtonManager::buttonDefaultEvent,
+                        &ButtonManager::buttonDefaultEvent,
+                        &ButtonManager::buttonDefaultEvent,
+                        &ButtonManager::buttonMultiPressDefaultEvent
+      );  
+    }
+    
     ~ButtonManager() {}
 
     const int buttonPins[NUM_BUTTONS] {22, 23};
@@ -93,99 +101,53 @@ class ButtonManager :
     // EVENT HANDLING / COMMAND SENDNG
     void handlePressed(int id, bool value)
     {
-      Serial.println("Pressed " + String(id));
-      switch (id)
-      {
-        case 0:
-
-          break;
-
-        case 1:
-
-          break;
-
-        case 2:
-          break;
-
-        case 3:
-          break;
-      }
+      onButtonPress(id, value);
     }
 
     void handleShortPress(int id)
     {
-      Serial.println("Short press " + String(id));
-      switch (id)
-      {
-        case 0:
-          break;
-
-        case 1:
-          break;
-
-        case 2:
-          break;
-
-        case 3:
-          break;
-      }
+      onButtonShortPress(id);
     }
 
     void handleLongPress(int id)
     {
-      Serial.println("Long press " + String(id));
-      switch (id)
-      {
-        case 0:
-          break;
-
-        case 1:
-          break;
-
-        case 2:
-          break;
-
-        case 3:
-          break;
-      }
+      onButtonLongPress(id);
     }
 
     void handleVeryLongPress(int id)
     {
-      Serial.println("Very long press " + String(id));
-      switch (id)
-      {
-        case 0:
-          break;
-
-        case 1:
-          break;
-
-        case 2:
-          break;
-
-        case 3:
-          break;
-      }
+      onButtonVeryLongPress(id);
     }
 
     void handleMultiPress(int id, int count)
     {
-      DBG("Multi press " + String(id) + " : " + String(count));
-      switch (id)
-      {
-        case 0:
-          break;
-
-        case 1:
-          break;
-
-        case 2:
-          break;
-
-        case 3:
-          break;
-      }
+      onButtonMultiPress(id, count);
     }
 
+
+    typedef void(*buttonValueEvent)(int,bool);
+    void (*onButtonPress) (int, bool);
+    typedef void(*buttonEvent)(int);
+    void (*onButtonShortPress) (int);
+    void (*onButtonLongPress) (int);
+    void (*onButtonVeryLongPress) (int);
+    typedef void(*multiPressEvent)(int,int);
+    void (*onButtonMultiPress) (int, int);
+
+    void setEventCallbacks (buttonValueEvent pressFunc, 
+                    buttonEvent shortPressFunc, 
+                    buttonEvent longPressFunc, 
+                    buttonEvent veryLongPressFunc, 
+                    multiPressEvent multiPressFunc
+                ) {
+      onButtonPress = pressFunc;
+      onButtonShortPress = shortPressFunc;
+      onButtonLongPress = longPressFunc;
+      onButtonVeryLongPress = veryLongPressFunc;
+      onButtonMultiPress = multiPressFunc;
+    }
+
+    static void buttonPressDefaultEvent(int id, bool value){}
+    static void buttonDefaultEvent(int id){}
+    static void buttonMultiPressDefaultEvent(int id, int count){}
 };
