@@ -68,7 +68,7 @@ void setup()
 {
   //Need to activate mosfet
   pinMode(12, OUTPUT);
-  digitalWrite(12, LOW);
+  digitalWrite(27, LOW);
 
   conf.init();
 
@@ -94,6 +94,7 @@ void setup()
 #if USE_WIFI
 #if USE_LEDS
     ledManager.setLed(0,CRGB::Blue);
+    ledManager.setLed(1,CRGB::Blue);
 #endif
 
   wifiManager.init();
@@ -223,6 +224,7 @@ void wifiConnectionUpdate()
 
 #if USE_LEDS
     ledManager.setLed(0,CRGB::Green);
+    ledManager.setLed(1,CRGB::Green);
 #endif
 
 #if USE_OSC
