@@ -97,15 +97,11 @@ class ButtonManager :
       switch (id)
       {
         case 0:
-#if USE_LEDS
-          ledManager.setLed(0, value ? CRGB::Red : CRGB::Black);
-#endif
+
           break;
 
         case 1:
-#if USE_LEDS
-          ledManager.setLed(1, value ? CRGB::Red : CRGB : Black);
-#endif
+
           break;
 
         case 2:
