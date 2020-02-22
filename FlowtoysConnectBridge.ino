@@ -98,7 +98,7 @@ void setup()
   wifiManager.setCallbackConnectionUpdate(wifiConnectionUpdate);
 
 #if USE_LEDS
-    updateConnectionLed();
+    updateConnectionLeds();
 #endif
 
 #if USE_OSC
@@ -225,7 +225,7 @@ void wifiConnectionUpdate()
   {
 
 #if USE_LEDS
-    updateConnectionLed();
+    updateConnectionLeds();
 #endif
 
 #if USE_OSC
