@@ -64,98 +64,6 @@ Player player;
 #endif
 
 
-void setup()
-{
-  //Need to activate mosfet
-  pinMode(12, OUTPUT);
-  digitalWrite(27, LOW);
-
-  conf.init();
-
-#if USE_SERIAL
-  serialManager.init();
-  serialManager.setCommandCallback(&commandCallback);
-  serialManager.setPatternCallback(&patternCallback);
-#endif //SERIAL
-
-#if USE_RF
-  rfManager.init();
-  rfManager.setRFDataCallback(&rfDataCallback);
-#endif
-
-#if USE_BLE && USE_SERIAL
-  bleManager.init();
-#endif //BLE
-
-#if USE_LEDS
-  ledManager.init();
-#endif
-
-#if USE_WIFI
-
-
-  wifiManager.init();
-  wifiManager.setCallbackConnectionUpdate(wifiConnectionUpdate);
-
-#if USE_LEDS
-    updateConnectionLeds();
-#endif
-
-#if USE_OSC
-  //wait for wifi event to init
-  oscManager.setCommandCallback(&commandCallback);
-  oscManager.setPatternCallback(&patternCallback);
-#endif //OSC
-#endif //WIFI
-
-#if USE_BUTTONS
-  btManager.init();
-  btManager.setEventCallbacks(handlePress, handleShortPress, handleLongPress, handleVeryLongPress, handleMultiPress);
-#endif
-
-
-#if USE_FILES
-  fileManager.init();
-#endif
-
-#if USE_PLAYER
-  player.init();
-#endif
-
-  DBG("Bridge is initialized");
-}
-
-
-void loop()
-{
-#if USE_BUTTONS
-  btManager.update();
-#endif
-
-#if USE_SERIAL
-  serialManager.update();
-#if USE_BLE
-  bleManager.update();
-#endif
-#endif
-
-#if USE_WIFI
-  wifiManager.update();
-#if USE_OSC
-  oscManager.update();
-#endif
-#endif
-
-#if USE_RF
-  rfManager.update();
-#endif
-
-#if USE_PLAYER
-  player.update();
-#endif
-
-}
-
 
 void patternCallback(String providerId, CommandProvider::PatternData data)
 {
@@ -339,4 +247,100 @@ void sleepESP()
   
   esp_sleep_enable_ext0_wakeup(GPIO_NUM_23, HIGH);
   esp_deep_sleep_start();
+}
+
+
+//  ------------------------------   SETUP AND LOOP
+
+
+void setup()
+{
+  //Need to activate mosfet
+  pinMode(12, OUTPUT);
+  digitalWrite(27, LOW);
+
+  conf.init();
+
+#if USE_SERIAL
+  serialManager.init();
+  serialManager.setCommandCallback(&commandCallback);
+  serialManager.setPatternCallback(&patternCallback);
+#endif //SERIAL
+
+#if USE_RF
+  rfManager.init();
+  rfManager.setRFDataCallback(&rfDataCallback);
+#endif
+
+#if USE_BLE && USE_SERIAL
+  bleManager.init();
+#endif //BLE
+
+#if USE_LEDS
+  ledManager.init();
+#endif
+
+#if USE_WIFI
+
+
+  wifiManager.init();
+  wifiManager.setCallbackConnectionUpdate(wifiConnectionUpdate);
+
+#if USE_LEDS
+    updateConnectionLeds();
+#endif
+
+#if USE_OSC
+  //wait for wifi event to init
+  oscManager.setCommandCallback(&commandCallback);
+  oscManager.setPatternCallback(&patternCallback);
+#endif //OSC
+#endif //WIFI
+
+#if USE_BUTTONS
+  btManager.init();
+  btManager.setEventCallbacks(handlePress, handleShortPress, handleLongPress, handleVeryLongPress, handleMultiPress);
+#endif
+
+
+#if USE_FILES
+  fileManager.init();
+#endif
+
+#if USE_PLAYER
+  player.init();
+#endif
+
+  DBG("Bridge is initialized");
+}
+
+
+void loop()
+{
+#if USE_BUTTONS
+  btManager.update();
+#endif
+
+#if USE_SERIAL
+  serialManager.update();
+#if USE_BLE
+  bleManager.update();
+#endif
+#endif
+
+#if USE_WIFI
+  wifiManager.update();
+#if USE_OSC
+  oscManager.update();
+#endif
+#endif
+
+#if USE_RF
+  rfManager.update();
+#endif
+
+#if USE_PLAYER
+  player.update();
+#endif
+
 }
