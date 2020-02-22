@@ -67,7 +67,7 @@ Player player;
 
 void patternCallback(String providerId, CommandProvider::PatternData data)
 {
-  DBG("Set pattern ! " + String(data.page) + ":" + String(data.mode));
+  //DBG("Set pattern ! " + String(data.page) + ":" + String(data.mode));
 #if USE_RF
   rfManager.setPattern(data);
 #endif

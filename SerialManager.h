@@ -27,7 +27,7 @@ class SerialManager :
     void init()
     {
       Serial.begin(115200);
-      memset(buffer, 0, 32);
+      memset(buffer, 0, 256);
     }
 
     void update()

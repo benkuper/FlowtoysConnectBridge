@@ -89,13 +89,13 @@ class RFGroup
       packet.global_sat = data.saturation;
       packet.global_speed = data.speed;
       packet.global_density = data.density;
-
+/*
       DBG("Set Pattern, groupID = "+String(groupID)+", padding = "+packet.padding
       +", LFO : "+String(packet.lfo_active)+" > lfo0 : "+String(packet.lfo[0])
       +", Hue active : "+String(packet.hue_active)+" > hue : "+String(packet.global_hue)+", sat : "+String(packet.global_sat)+", val : "+String(packet.global_val)
       +", speed : "+String(packet.global_speed)+", density : "+String(packet.global_density)
       );
-  
+*/  
     }
 
      void updateFromPacket(SyncPacket receivingPacket)
