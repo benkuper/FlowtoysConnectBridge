@@ -311,19 +311,17 @@ void updateConnectionLeds()
     {
       if(bleManager.isActivated) 
       {
-        if(deviceIsConnected) c = CRGB::White;
+        if(bleManager.deviceConnected) c = CRGB::White;
         else c = CRGB::Purple;
       }
       else c = CRGB::Red; 
     }
   }else if(bleManager.isActivated)
   {
-    if(deviceIsConnected) c = CRGB::White;
+    if(bleManager.deviceConnected) c = CRGB::White;
     else c = CRGB::Purple;
   }
  
-  int r = wifiManager.isActivated?(wifiManager.isConnecting? CRGB::Purple : (wifiManager.isConnected?(wifiManager.isLocal?CRGB::Yellow:255):CRGB::Red)):CRGB::Black;
-  int g = bleManager.isActivated?bleManager.deviceConnected?CRGB
   ledManager.setLed(0, c);
 }
 
