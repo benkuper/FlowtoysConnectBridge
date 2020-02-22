@@ -9,6 +9,7 @@
 
 #define CONNECT_TIMEOUT 5000
 #define CONNECT_TRYTIME 500
+
 class WifiManager
 {
 public:

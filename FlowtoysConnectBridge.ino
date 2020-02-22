@@ -16,8 +16,8 @@ Config conf;
 
 #define USE_BUTTONS 1
 #define USE_LEDS 1
-#define USE_FILES 1
-#define USE_PLAYER 1
+#define USE_FILES 0
+#define USE_PLAYER 0
 
 #if USE_SERIAL
 #include "SerialManager.h"
@@ -92,13 +92,15 @@ void setup()
 #endif
 
 #if USE_WIFI
-#if USE_LEDS
-    ledManager.setLed(0,CRGB::Blue);
-    ledManager.setLed(1,CRGB::Blue);
-#endif
+
 
   wifiManager.init();
   wifiManager.setCallbackConnectionUpdate(wifiConnectionUpdate);
+
+#if USE_LEDS
+    updateConnectionLed();
+#endif
+
 #if USE_OSC
   //wait for wifi event to init
   oscManager.setCommandCallback(&commandCallback);
@@ -223,8 +225,7 @@ void wifiConnectionUpdate()
   {
 
 #if USE_LEDS
-    ledManager.setLed(0,CRGB::Green);
-    ledManager.setLed(1,CRGB::Green);
+    updateConnectionLed();
 #endif
 
 #if USE_OSC
@@ -241,7 +242,7 @@ void handlePress(int id, bool value)
 {
   DBG("Pressed " + String(id)+":"+String(value));
 #if USE_LEDS
-  ledManager.setLed(id, value?CRGB::Red:CRGB::Blue);
+
 #endif
 }
 
@@ -258,6 +259,7 @@ void handleLongPress(int id)
 void handleVeryLongPress(int id)
 {
   DBG("Very long press " + String(id));
+  sleepESP();
 }
 
 void handleMultiPress(int id, int count)
@@ -293,3 +295,50 @@ void rfDataCallback()
   */
 }
 #endif
+
+
+void updateConnectionLeds()
+{
+  CRGB c;
+  if(wifiManager.isActivated)
+  {
+     if(wifiManager.isConnecting) c = CRGB::Cyan;
+    else if(wifiManager.isConnected)
+    {
+      if(bleManager.isActivated) c = CRGB::Green;
+      else if(wifiManager.isLocal) c = CRGB::Yellow;
+    }else
+    {
+      if(bleManager.isActivated) 
+      {
+        if(deviceIsConnected) c = CRGB::White;
+        else c = CRGB::Purple;
+      }
+      else c = CRGB::Red; 
+    }
+  }else if(bleManager.isActivated)
+  {
+    if(deviceIsConnected) c = CRGB::White;
+    else c = CRGB::Purple;
+  }
+ 
+  int r = wifiManager.isActivated?(wifiManager.isConnecting? CRGB::Purple : (wifiManager.isConnected?(wifiManager.isLocal?CRGB::Yellow:255):CRGB::Red)):CRGB::Black;
+  int g = bleManager.isActivated?bleManager.deviceConnected?CRGB
+  ledManager.setLed(0, c);
+}
+
+void sleepESP()
+{
+  for(int i=255;i>=0;i++)
+  {
+    CHSV c(30,255,i);
+    ledManager.setLed(0, c);
+    ledManager.setLed(1, c);
+    delay(2);
+  }
+  
+  delay(500);
+  
+  esp_sleep_enable_ext0_wakeup(GPIO_NUM_23, HIGH);
+  esp_deep_sleep_start();
+}

@@ -77,6 +77,9 @@ public:
         }else if(msg.fullMatch("/stopSync"))
         {
            sendCommand(STOP_SYNC);
+        }else if(msg.fullMatch("/resetSync"))
+        {
+          sendCommand(RESET_SYNC);
         }
         else if(msg.fullMatch("/pattern"))
         {

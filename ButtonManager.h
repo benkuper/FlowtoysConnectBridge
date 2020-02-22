@@ -26,7 +26,7 @@ class ButtonManager
     
     ~ButtonManager() {}
 
-    const int buttonPins[NUM_BUTTONS] {22, 23};
+    const int buttonPins[NUM_BUTTONS] {23,22};
 
     bool pressed[NUM_BUTTONS];
     bool longPress[NUM_BUTTONS];
