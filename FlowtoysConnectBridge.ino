@@ -184,7 +184,7 @@ void handleLongPress(int id)
 void handleVeryLongPress(int id)
 {
   DBG("Very long press " + String(id));
-  sleepESP();
+  sleepESP(true);
 }
 
 void handleMultiPress(int id, int count)
@@ -221,20 +221,23 @@ void rfDataCallback()
 }
 #endif
 
-void sleepESP()
+void sleepESP(bool animate)
 {
-  for (int i = 255; i >= 0; i--)
+  if (animate)
   {
-    CHSV c(30, 255, i);
-    ledManager.setLed(0, c);
-    ledManager.setLed(1, c);
-    FastLED.delay(2);
+    for (int i = 255; i >= 0; i--)
+    {
+      CHSV c(30, 255, i);
+      ledManager.setLed(0, c);
+      ledManager.setLed(1, c);
+      FastLED.delay(2);
+    }
+
+    FastLED.delay(500);
   }
 
-  DBG("Sleep !");
-  FastLED.delay(500);
-
-  esp_sleep_enable_ext0_wakeup(GPIO_NUM_23, LOW);
+  //esp_sleep_enable_ext0_wakeup(22, HIGH);
+  esp_sleep_enable_timer_wakeup(1e6);
   esp_deep_sleep_start();
 }
 
@@ -290,11 +293,26 @@ void setup()
 
   conf.init();
 
+
 #if USE_SERIAL
   serialManager.init();
   serialManager.setCommandCallback(&commandCallback);
   serialManager.setPatternCallback(&patternCallback);
 #endif //SERIAL
+
+#if USE_BUTTONS
+  btManager.init();
+  if (digitalRead(btManager.buttonPins[0]))
+  {
+    DBG("Button not pressed, sleep.");
+    sleepESP(false);
+    return;
+  }
+#endif
+
+#if USE_LEDS
+  ledManager.init();
+#endif
 
 #if USE_RF
   rfManager.init();
@@ -305,9 +323,7 @@ void setup()
   bleManager.init();
 #endif //BLE
 
-#if USE_LEDS
-  ledManager.init();
-#endif
+
 
 #if USE_WIFI
   wifiManager.init();
@@ -320,11 +336,6 @@ void setup()
 #endif //OSC
 #endif //WIFI
 
-#if USE_BUTTONS
-  btManager.init();
-  btManager.setEventCallbacks(handlePress, handleShortPress, handleLongPress, handleVeryLongPress, handleMultiPress);
-#endif
-
 
 #if USE_FILES
   fileManager.init();
@@ -332,6 +343,11 @@ void setup()
 
 #if USE_PLAYER
   player.init();
+#endif
+
+#if USE_BUTTONS
+  //only after everything has been handled
+  btManager.setEventCallbacks(handlePress, handleShortPress, handleLongPress, handleVeryLongPress, handleMultiPress);
 #endif
 
   DBG("Bridge is initialized");

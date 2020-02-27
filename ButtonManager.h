@@ -42,7 +42,7 @@ class ButtonManager
         pressed[i] = false;
         longPress[NUM_BUTTONS] = false;
         veryLongPress[NUM_BUTTONS] = false;
-        timeAtPress[NUM_BUTTONS] = false;
+        timeAtPress[NUM_BUTTONS] = millis();
         multipressCount[NUM_BUTTONS] = false;
       }
     }

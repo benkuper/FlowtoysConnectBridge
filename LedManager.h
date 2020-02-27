@@ -14,7 +14,7 @@ public:
     {
       LEDS.addLeds<APA102, DATA_PIN, CLOCK_PIN, BGR>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
       LEDS.setBrightness(20);
-      FastLED.showColor(CRGB::Black);
+      FastLED.showColor(CRGB::Orange);
     }
 
     void setLed(int id, CRGB color, bool show = true)
