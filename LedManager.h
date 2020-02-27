@@ -13,15 +13,15 @@ public:
     void init()
     {
       LEDS.addLeds<APA102, DATA_PIN, CLOCK_PIN, BGR>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
-      LEDS.setBrightness(50);
+      LEDS.setBrightness(20);
+      FastLED.showColor(CRGB::Black);
     }
 
-    void setLed(int id, CRGB color)
+    void setLed(int id, CRGB color, bool show = true)
     {
-      DBG("Set led "+String(id));
       if (id < 0 || id >= NUM_LEDS) return;
       leds[id] = color;
-      LEDS.show();
+      if(show) LEDS.show();
     }
 
     void setAll(CRGB color)

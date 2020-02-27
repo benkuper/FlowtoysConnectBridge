@@ -85,7 +85,8 @@ public:
     "."+String(WiFi.localIP()[2])+
     "."+String(WiFi.localIP()[3]));
 
-        isLocal = true;
+        isLocal = false;
+        isConnecting = false;
         setConnected(true);
     
          return;

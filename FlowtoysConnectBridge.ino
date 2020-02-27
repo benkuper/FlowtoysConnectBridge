@@ -64,10 +64,18 @@ Player player;
 #endif
 
 
+//LEDS
+float timeAtLastBLEReceived;
+float timeAtLastOSCReceived;
+float timeAtLastRFReceived;
 
 void patternCallback(String providerId, CommandProvider::PatternData data)
 {
   //DBG("Set pattern ! " + String(data.page) + ":" + String(data.mode));
+
+  if (providerId == "OSC") timeAtLastOSCReceived = millis() / 1000.0f;
+  else timeAtLastBLEReceived = millis() / 1000.0f;
+
 #if USE_RF
   rfManager.setPattern(data);
 #endif
@@ -76,10 +84,23 @@ void patternCallback(String providerId, CommandProvider::PatternData data)
 void commandCallback(String providerId, CommandProvider::CommandData data)
 {
   DBG("Got Command from " + providerId + " : " + data.type);
+
+  if (providerId == "OSC") timeAtLastOSCReceived = millis() / 1000.0f;
+  else timeAtLastBLEReceived = millis() / 1000.0f;
+
   switch (data.type)
   {
 #if USE_RF
-    case CommandProvider::CommandType::SYNC_RF: rfManager.syncRF(data.value1.floatValue); break;
+    case CommandProvider::CommandType::GROUP_ADDED:
+      timeAtLastRFReceived = millis() / 1000.0f;
+      break;
+
+    case CommandProvider::CommandType::SYNC_RF:
+      {
+        rfManager.resetSync(); //tmp because app doesn't have button
+        rfManager.syncRF(data.value1.floatValue);
+      }
+      break;
     case CommandProvider::CommandType::STOP_SYNC: rfManager.stopSync(); break;
     case CommandProvider::CommandType::RESET_SYNC: rfManager.resetSync(); break;
     case CommandProvider::CommandType::WAKEUP: rfManager.wakeUp(data.value1.intValue, data.value2.intValue); break;
@@ -114,7 +135,7 @@ void commandCallback(String providerId, CommandProvider::CommandData data)
         conf.setWifiBLEMode(data.value2.intValue);
 
         DBG("Set Device name : " + conf.getDeviceName() + " and mode wifi : " + String(conf.getWifiMode()) + ", BLE : " + String(conf.getBLEMode()));
-        delay(500);
+        FastLED.delay(500);
         ESP.restart();
       }
       break;
@@ -132,10 +153,6 @@ void wifiConnectionUpdate()
   if (wifiManager.isConnected)
   {
 
-#if USE_LEDS
-    updateConnectionLeds();
-#endif
-
 #if USE_OSC
     DBG("Setup OSC now");
     oscManager.init();
@@ -148,7 +165,7 @@ void wifiConnectionUpdate()
 #if USE_BUTTONS
 void handlePress(int id, bool value)
 {
-  DBG("Pressed " + String(id)+":"+String(value));
+  DBG("Pressed " + String(id) + ":" + String(value));
 #if USE_LEDS
 
 #endif
@@ -204,49 +221,61 @@ void rfDataCallback()
 }
 #endif
 
-
-void updateConnectionLeds()
-{
-  CRGB c;
-  if(wifiManager.isActivated)
-  {
-     if(wifiManager.isConnecting) c = CRGB::Cyan;
-    else if(wifiManager.isConnected)
-    {
-      if(bleManager.isActivated) c = CRGB::Green;
-      else if(wifiManager.isLocal) c = CRGB::Yellow;
-    }else
-    {
-      if(bleManager.isActivated) 
-      {
-        if(bleManager.deviceConnected) c = CRGB::White;
-        else c = CRGB::Purple;
-      }
-      else c = CRGB::Red; 
-    }
-  }else if(bleManager.isActivated)
-  {
-    if(bleManager.deviceConnected) c = CRGB::White;
-    else c = CRGB::Purple;
-  }
- 
-  ledManager.setLed(0, c);
-}
-
 void sleepESP()
 {
-  for(int i=255;i>=0;i++)
+  for (int i = 255; i >= 0; i--)
   {
-    CHSV c(30,255,i);
+    CHSV c(30, 255, i);
     ledManager.setLed(0, c);
     ledManager.setLed(1, c);
-    delay(2);
+    FastLED.delay(2);
   }
-  
-  delay(500);
-  
-  esp_sleep_enable_ext0_wakeup(GPIO_NUM_23, HIGH);
+
+  DBG("Sleep !");
+  FastLED.delay(500);
+
+  esp_sleep_enable_ext0_wakeup(GPIO_NUM_23, LOW);
   esp_deep_sleep_start();
+}
+
+// ------------------------------ LEDS
+
+void updateLeds()
+{
+  float curTime = millis() / 1000.0f;
+
+  CRGB c1 = CRGB::Black;
+  CRGB c2 = CRGB::Black;
+
+  if (rfManager.syncing)
+  {
+    float rp = max(1 - (curTime - timeAtLastRFReceived) / .3f, 0.f);
+    c1 = blend(CRGB::Blue, CRGB::Orange, (int)(rp * 255));
+    c2 = c1;
+  } else
+  {
+    if (wifiManager.isConnecting)  c1 = CRGB::Yellow;
+    else if (wifiManager.isConnected)
+    {
+      if (wifiManager.isLocal) c1 = CRGB::Purple;
+      else c1 = CRGB::Green;
+    }
+
+    if (bleManager.isActivated)
+    {
+      if (bleManager.deviceConnected) c2 = CRGB::Green;
+      else c2 = CRGB::Yellow;
+    }
+
+
+    float p1 = max(1 - (curTime - timeAtLastOSCReceived) / .3f, 0.f);
+    float p2 = max(1 - (curTime - timeAtLastBLEReceived) / .3f, 0.f);
+    c1 = blend(c1, CRGB::White, (int)(p1 * 255));
+    c2 = blend(c2, CRGB::White, (int)(p2 * 255));
+  }
+
+  ledManager.setLed(0, c1, false);
+  ledManager.setLed(1, c2, true);
 }
 
 
@@ -281,14 +310,8 @@ void setup()
 #endif
 
 #if USE_WIFI
-
-
   wifiManager.init();
   wifiManager.setCallbackConnectionUpdate(wifiConnectionUpdate);
-
-#if USE_LEDS
-    updateConnectionLeds();
-#endif
 
 #if USE_OSC
   //wait for wifi event to init
@@ -341,6 +364,10 @@ void loop()
 
 #if USE_PLAYER
   player.update();
+#endif
+
+#if USE_LEDS
+  updateLeds();
 #endif
 
 }

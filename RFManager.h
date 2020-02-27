@@ -26,10 +26,11 @@
 
 #define SEND_TIME 30 //ms
 
-class RFManager
+class RFManager :
+  public CommandProvider
 {
   public:
-    RFManager() : radio(4, 33) {}
+    RFManager() : CommandProvider("RF"), radio(4, 33) {}
     ~RFManager() {}
   
     RF24 radio; //CE and CS pins for SPI bus on NRF24+
@@ -215,6 +216,7 @@ class RFManager
                   privateGroups[numActivePrivateGroups].setup(receivingPacket.groupID, &radio);
                   privateGroups[numActivePrivateGroups].updateFromPacket(receivingPacket);
                   Config::instance->setRFNetworkId(numActivePrivateGroups, receivingPacket.groupID);
+                  sendCommand(GROUP_ADDED);
                   numActivePrivateGroups++;
                }else
                {

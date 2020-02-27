@@ -114,7 +114,7 @@ public:
             CommandData d;
             d.type = SET_GLOBAL_CONFIG;
             msg.getString(0, d.value1.stringValue);
-            d.value2.intValue = msg.getInt(1); //0 is wifi, 1 is BLE, 2 is both
+            d.value2.intValue = msg.size() > 1?msg.getInt(1):2; //0 is wifi, 1 is BLE, 2 is both
             sendCommand(d);
         }else if(msg.fullMatch("/play"))
         {
