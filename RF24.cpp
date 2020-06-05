@@ -663,7 +663,7 @@ bool RF24::begin(void)
   setRetries(5,15);
 
   // Reset value is MAX
-  //setPALevel( RF24_PA_MAX ) ;
+  setPALevel( RF24_PA_MIN ) ;
 
   // check for connected module and if this is a p nRF24l01 variant
   //
