@@ -16,7 +16,7 @@ Config conf;
 
 #define USE_BUTTONS 1
 #define USE_LEDS 1
-#define USE_FILES 0
+#define USE_FILES 1
 #define USE_PLAYER 0
 
 #if USE_SERIAL
@@ -287,9 +287,6 @@ void updateLeds()
 
 void setup()
 {
-  //Need to activate mosfet
-  pinMode(12, OUTPUT);
-  digitalWrite(27, LOW);
 
   conf.init();
 

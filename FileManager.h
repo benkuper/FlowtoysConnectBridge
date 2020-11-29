@@ -1,7 +1,7 @@
 #pragma once
 
-#include <SPI.h>
-#include <SD.h>
+#include "SPI.h"
+#include "SD.h"
 #include <ArduinoJson.h>
 
 #define SDSPEED 10000000
@@ -28,9 +28,16 @@ public:
       pinMode(MISO_PIN,INPUT_PULLUP); 
       pinMode(MOSI_PIN,INPUT_PULLUP); 
       pinMode(CS_PIN,INPUT_PULLUP); 
+      //Need to activate mosfet
+      pinMode(27, OUTPUT);
+      digitalWrite(27, LOW);
+      // CS bug
+      pinMode(CS_PIN, OUTPUT); // wierd CS/SS bug with SPI lib
+      digitalWrite(CS_PIN, LOW);
+      
       spiSD.begin(SCK_PIN, MISO_PIN, MOSI_PIN, CS_PIN);//SCK,MISO,MOSI,ss
       
-      if(SD.begin( CS_PIN, spiSD, SDSPEED))
+      if(SD.begin( CS_PIN, spiSD/*, SDSPEED*/))
       {
         DBG("SD Card initialized.");
          sdIsDetected = true;
