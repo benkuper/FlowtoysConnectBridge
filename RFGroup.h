@@ -31,12 +31,17 @@ struct SyncPacket {
 #pragma pack(pop)
 
 
+
 class RFGroup
 {
   public:
-    RFGroup() {}
+    RFGroup() : prevHue(0), prevSat(0), prevVal(0) {}
 
     ~RFGroup() {}
+
+    uint8_t prevHue;
+    uint8_t prevSat;
+    uint8_t prevVal;
 
     void setup(int gid, RF24 * r)
     {

@@ -15,7 +15,7 @@ public:
   ~OSCManager(){}
     
   WiFiUDP Udp;
-  const unsigned int localPort = 8888;        // local port to listen for UDP packets (here's where we send the packets)
+  const unsigned int localPort = 9000;        // local port to listen for UDP packets (here's where we send the packets)
   char address[64];
    
   void init()
@@ -54,8 +54,8 @@ public:
             d.type = WAKEUP;
             msg.getString(0,d.value1.stringValue);
             msg.getString(1,d.value2.stringValue);
-           d.value1.intValue = msg.getInt(0); //group
-           d.value2.intValue = msg.getInt(1); //isPublic
+           d.value1.intValue = msg.size() > 0 ? msg.getInt(0) : 0; //group
+           d.value2.intValue = msg.size() > 1 ? msg.getInt(1) : 0; //isPublic
            sendCommand(d);
         }else if(msg.fullMatch("/powerOff"))
         {
@@ -63,14 +63,14 @@ public:
             d.type = POWEROFF;
             msg.getString(0,d.value1.stringValue);
             msg.getString(1,d.value2.stringValue);
-           d.value1.intValue = msg.getInt(0); //group
-           d.value2.intValue = msg.getInt(1); //isPublic
+           d.value1.intValue = msg.size() > 0 ? msg.getInt(0) : 0; //group
+           d.value2.intValue = msg.size() > 1 ? msg.getInt(1) : 0; //isPublic
            sendCommand(d);
         }else if(msg.fullMatch("/sync"))
         {
             CommandData d;
             d.type = SYNC_RF;
-            d.value1.floatValue = msg.getFloat(0);
+            d.value1.floatValue =  msg.size() > 0 ? msg.getFloat(0) : 0;
            sendCommand(d);
         }else if(msg.fullMatch("/stopSync"))
         {

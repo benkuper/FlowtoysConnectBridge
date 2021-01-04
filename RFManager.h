@@ -7,6 +7,7 @@
 #include "Config.h"
 #include "SerialManager.h"
 #include "RFGroup.h"
+#include <FastLED.h>
 
 /*
    GROUP IDS
@@ -20,7 +21,7 @@
 #define NUM_PUBLIC_GROUPS 5
 #define PUBLIC_GROUP_START_ID 1
 
-#define MAX_PRIVATE_GROUPS 32
+#define MAX_PRIVATE_GROUPS 100
 
 #define AUTOADD_PRIVATES 1
 
@@ -118,6 +119,26 @@ class RFManager :
       radio.startListening();
     }
 
+
+    void setSolidColors(CRGB * colors)
+    {
+      for(int i=0;i<MAX_PRIVATE_GROUPS;i++)
+      {
+       
+        CommandProvider::PatternData data = CommandProvider::getSolidColorPattern(colors[i]);
+        if(data.hueOffset != privateGroups[i].prevHue
+        || data.saturation != privateGroups[i].prevSat
+        || data.brightness != privateGroups[i].prevVal)
+        {
+          //DBG("Set solid color for group : "+String(i) +" : "+String(colors[i].r)+" > "+String(data.hueOffset)+", "+String(data.saturation)+", "+String(data.brightness));
+          privateGroups[i].setData(data);
+
+          privateGroups[i].prevHue = data.hueOffset;
+          privateGroups[i].prevSat = data.saturation; 
+          privateGroups[i].prevVal = data.brightness;
+        }
+      }
+    }
 
 
     void setPattern(CommandProvider::PatternData data)

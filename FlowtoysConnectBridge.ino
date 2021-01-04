@@ -3,15 +3,17 @@ Config conf;
 
 #define USE_SERIAL 1
 #if USE_SERIAL
-#define SERIAL_DEBUG 1
-#define USE_BLE 1
+  #define SERIAL_DEBUG 1
+  #define USE_BLE 0
 #endif
 
 #define USE_RF 1
 
+
 #define USE_WIFI 1
 #if USE_WIFI
-#define USE_OSC 1
+  #define USE_OSC 1
+  #define USE_STREAMING 1
 #endif
 
 #define USE_BUTTONS 1
@@ -61,6 +63,11 @@ FileManager fileManager;
 #if USE_PLAYER
 #include "Player.h"
 Player player;
+#endif
+
+#if USE_STREAMING
+#include "StreamManager.h"
+StreamManager stream;
 #endif
 
 
@@ -157,6 +164,11 @@ void wifiConnectionUpdate()
     DBG("Setup OSC now");
     oscManager.init();
 #endif
+
+#if USE_STREAMING
+  stream.init();
+#endif
+
   }
 }
 #endif
@@ -264,12 +276,13 @@ void updateLeds()
       else c1 = CRGB::Green;
     }
 
+#if USE_BLE
     if (bleManager.isActivated)
     {
       if (bleManager.deviceConnected) c2 = CRGB::Green;
       else c2 = CRGB::Yellow;
     }
-
+#endif
 
     float p1 = max(1 - (curTime - timeAtLastOSCReceived) / .3f, 0.f);
     float p2 = max(1 - (curTime - timeAtLastBLEReceived) / .3f, 0.f);
@@ -371,6 +384,16 @@ void loop()
   wifiManager.update();
 #if USE_OSC
   oscManager.update();
+#endif
+
+#if USE_STREAMING
+
+  if(stream.update())
+  {
+    #if USE_RF
+      rfManager.setSolidColors(stream.leds);
+    #endif
+  }
 #endif
 #endif
 
