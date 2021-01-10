@@ -216,6 +216,13 @@ public:
         {
            sendCommand(SYNC_RF);
         }*/
+
+        #if USE_STREAMING
+        }else if(msg.fullMatch("/rgb/brightness"))
+        {
+          globalBrightness = msg.getFloat(0);
+       #endif
+       
        }else{
           char addr[32];
           msg.getAddress(addr, 0);

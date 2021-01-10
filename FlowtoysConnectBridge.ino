@@ -31,7 +31,9 @@ BLEManager bleManager;
 #endif //BLE
 #endif //SERIAL
 
+
 #if USE_RF
+float globalBrightness = 1;
 #include "RFManager.h"
 RFManager rfManager;
 #endif
@@ -78,7 +80,7 @@ float timeAtLastRFReceived;
 
 void patternCallback(String providerId, CommandProvider::PatternData data)
 {
-  //DBG("Set pattern ! " + String(data.page) + ":" + String(data.mode));
+  DBG("Set pattern ! " + String(data.page) + ":" + String(data.mode) + " / "+ String(data.actives));
 
   if (providerId == "OSC") timeAtLastOSCReceived = millis() / 1000.0f;
   else timeAtLastBLEReceived = millis() / 1000.0f;
@@ -104,7 +106,7 @@ void commandCallback(String providerId, CommandProvider::CommandData data)
 
     case CommandProvider::CommandType::SYNC_RF:
       {
-        rfManager.resetSync(); //tmp because app doesn't have button
+        //rfManager.resetSync(); //tmp because app doesn't have button
         rfManager.syncRF(data.value1.floatValue);
       }
       break;

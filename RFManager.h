@@ -25,7 +25,7 @@
 
 #define AUTOADD_PRIVATES 1
 
-#define SEND_TIME 30 //ms
+#define SEND_TIME 20 //ms
 
 class RFManager :
   public CommandProvider
@@ -76,8 +76,8 @@ class RFManager :
     {
       if (millis() > lastSendTime + SEND_TIME)
       {
-        sendPackets();
         lastSendTime = millis();
+        sendPackets();
       }
 
       if(syncing && syncTime > 0 && millis() > timeAtSync + syncTime)
@@ -115,28 +115,18 @@ class RFManager :
     {
       radio.stopListening();
       for (int i = 0; i < NUM_PUBLIC_GROUPS; i++) publicGroups[i].sendPacket();
-      for (int i = 0; i < MAX_PRIVATE_GROUPS; i++) privateGroups[i].sendPacket();
+      for (int i = 0; i < numActivePrivateGroups; i++) privateGroups[i].sendPacket();
       radio.startListening();
     }
 
 
     void setSolidColors(CRGB * colors)
     {
-      for(int i=0;i<MAX_PRIVATE_GROUPS;i++)
+      for(int i=0;i < numActivePrivateGroups ;i++)
       {
-       
         CommandProvider::PatternData data = CommandProvider::getSolidColorPattern(colors[i]);
-        if(data.hueOffset != privateGroups[i].prevHue
-        || data.saturation != privateGroups[i].prevSat
-        || data.brightness != privateGroups[i].prevVal)
-        {
-          //DBG("Set solid color for group : "+String(i) +" : "+String(colors[i].r)+" > "+String(data.hueOffset)+", "+String(data.saturation)+", "+String(data.brightness));
-          privateGroups[i].setData(data);
-
-          privateGroups[i].prevHue = data.hueOffset;
-          privateGroups[i].prevSat = data.saturation; 
-          privateGroups[i].prevVal = data.brightness;
-        }
+        data.brightness *= globalBrightness;
+        privateGroups[i].setData(data, true);
       }
     }
 
@@ -230,7 +220,7 @@ class RFManager :
               {
                 if(numActivePrivateGroups < MAX_PRIVATE_GROUPS) 
                 {
-                  DBG("Adding group : "+String(receivingPacket.groupID));
+                  DBG("Adding group : "+String(receivingPacket.groupID)+" at index "+String(numActivePrivateGroups));
                   digitalWrite(13,HIGH);
                   delay(50);
                   digitalWrite(13,LOW);
@@ -243,9 +233,10 @@ class RFManager :
                {
                   DBG("Max groups reached");
                }
+              }else
+              {
+                DBG("Packet from unknown group received "+String(receivingPacket.groupID));
               }
-              
-              DBG("Packet from unknown group received "+String(receivingPacket.groupID));
             }
           }
 
@@ -272,13 +263,9 @@ class RFManager :
       Config::instance->setNumPrivateGroups(numActivePrivateGroups);
       DBG("Finish sync, got "+String(Config::instance->getNumPrivateGroups())+" groups");
       
-       for(int i=0;i<numActivePrivateGroups;i++)
+      for(int i=0;i<numActivePrivateGroups;i++)
       {
         DBG(" > "+String(privateGroups[i].groupID));
-        digitalWrite(13,HIGH);
-        delay(50);
-        digitalWrite(13,LOW);
-        delay(50);
       }
     }
 
@@ -289,6 +276,7 @@ class RFManager :
 
     void resetPrivateGroups()
     {
+      DBG("Reset private groups !");
       numActivePrivateGroups = 0;
     }
 

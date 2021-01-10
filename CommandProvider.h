@@ -64,11 +64,11 @@ public:
     static PatternData getSolidColorPattern(CRGB color)
     {
       PatternData data;
-      data.page = 3;
-      data.mode = 8;
+      data.page = 2;
+      data.mode = 7;
 
       CHSV c = rgb2hsv_approximate(color);
-      data.actives = 14; //hue, sat, val
+      data.actives = 255; //hue, sat, val
       data.hueOffset = c.hue;
       data.saturation = c.sat;
       data.brightness = c.val;
