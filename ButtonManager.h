@@ -3,7 +3,11 @@
 
 //2 buttons wired on pin 22 and 23 (hardware pull up), no need to debounce, just a digital read
 
+#if VERSION == 1
 #define NUM_BUTTONS 2
+#elif VERSION == 2
+#define NUM_BUTTONS 3
+#endif
 
 #define LONGPRESS_TIME 500 //more than 500ms is long press
 #define VERYLONGPRESS_TIME 1500
@@ -26,7 +30,11 @@ class ButtonManager
     
     ~ButtonManager() {}
 
+#if VERSION == 1
     const int buttonPins[NUM_BUTTONS] {23,22};
+#elif VERSION == 2
+    const int buttonPins[NUM_BUTTONS] {36,39,34};
+#endif
 
     bool pressed[NUM_BUTTONS];
     bool longPress[NUM_BUTTONS];

@@ -218,24 +218,28 @@ class RFManager :
             {
               if(syncing)
               {
-                if(numActivePrivateGroups < MAX_PRIVATE_GROUPS) 
+                if(receivingPacket.page == 0 && receivingPacket.mode == 2)
                 {
-                  DBG("Adding group : "+String(receivingPacket.groupID)+" at index "+String(numActivePrivateGroups));
-                  digitalWrite(13,HIGH);
-                  delay(50);
-                  digitalWrite(13,LOW);
-                  privateGroups[numActivePrivateGroups].setup(receivingPacket.groupID, &radio);
-                  privateGroups[numActivePrivateGroups].updateFromPacket(receivingPacket);
-                  Config::instance->setRFNetworkId(numActivePrivateGroups, receivingPacket.groupID);
-                  sendCommand(GROUP_ADDED);
-                  numActivePrivateGroups++;
-               }else
-               {
-                  DBG("Max groups reached");
-               }
-              }else
+                   if(numActivePrivateGroups < MAX_PRIVATE_GROUPS) 
+                    {
+                      DBG("Adding group : "+String(receivingPacket.groupID)+" at index "+String(numActivePrivateGroups));
+                      digitalWrite(13,HIGH);
+                      delay(50);
+                      digitalWrite(13,LOW);
+                      privateGroups[numActivePrivateGroups].setup(receivingPacket.groupID, &radio);
+                      privateGroups[numActivePrivateGroups].updateFromPacket(receivingPacket);
+                      Config::instance->setRFNetworkId(numActivePrivateGroups, receivingPacket.groupID);
+                      sendCommand(GROUP_ADDED);
+                      numActivePrivateGroups++;
+                   }else
+                   {
+                      DBG("Max groups reached");
+                   }
+                }
+               
+              }else if(!syncing)
               {
-                DBG("Packet from unknown group received "+String(receivingPacket.groupID));
+                //DBG("Packet from unknown group received "+String(receivingPacket.groupID));
               }
             }
           }
