@@ -1,4 +1,5 @@
 #pragma once
+#include <FastLED.h>
 
 class CommandProvider
 {
@@ -59,6 +60,21 @@ public:
       uint8_t lfo3 = 0;
       uint8_t lfo4 = 0;
     };
+
+    static PatternData getSolidColorPattern(CRGB color)
+    {
+      PatternData data;
+      data.page = 2;
+      data.mode = 7;
+
+      CHSV c = rgb2hsv_approximate(color);
+      data.actives = 255; //hue, sat, val
+      data.hueOffset = c.hue;
+      data.saturation = c.sat;
+      data.brightness = c.val;
+      
+      return data;
+    }
 
     void sendCommand(CommandType type) { 
       CommandData data;

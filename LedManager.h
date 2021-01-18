@@ -3,7 +3,12 @@
 
 #define DATA_PIN 25
 #define CLOCK_PIN 26
-#define NUM_LEDS 2
+
+#if VERSION == 1
+  #define NUM_LEDS 2
+#elif VERSION == 2
+  #define NUM_LEDS 3
+#endif
 
 class LedManager
 {

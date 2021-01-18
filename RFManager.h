@@ -7,6 +7,7 @@
 #include "Config.h"
 #include "SerialManager.h"
 #include "RFGroup.h"
+#include <FastLED.h>
 
 /*
    GROUP IDS
@@ -20,11 +21,12 @@
 #define NUM_PUBLIC_GROUPS 5
 #define PUBLIC_GROUP_START_ID 1
 
-#define MAX_PRIVATE_GROUPS 32
+#define MAX_PRIVATE_GROUPS 100
 
 #define AUTOADD_PRIVATES 1
 
 #define SEND_TIME 30 //ms
+#define FORCESEND_TIME 1000
 
 class RFManager :
   public CommandProvider
@@ -41,7 +43,8 @@ class RFManager :
     SyncPacket receivingPacket;
 
     long lastSendTime = 0;
-
+    long lastForceSendTime = 0;
+    
     int numActivePrivateGroups;
 
     bool syncing;
@@ -75,8 +78,14 @@ class RFManager :
     {
       if (millis() > lastSendTime + SEND_TIME)
       {
-        sendPackets();
         lastSendTime = millis();
+        sendPackets();
+      }
+
+      if (millis() > lastForceSendTime + FORCESEND_TIME)
+      {
+        lastForceSendTime = millis();
+        sendPackets(true);
       }
 
       if(syncing && syncTime > 0 && millis() > timeAtSync + syncTime)
@@ -110,14 +119,24 @@ class RFManager :
 
     }
 
-    void sendPackets()
+    void sendPackets(bool force = false)
     {
       radio.stopListening();
-      for (int i = 0; i < NUM_PUBLIC_GROUPS; i++) publicGroups[i].sendPacket();
-      for (int i = 0; i < MAX_PRIVATE_GROUPS; i++) privateGroups[i].sendPacket();
+      //for (int i = 0; i < NUM_PUBLIC_GROUPS; i++) publicGroups[i].sendPacket(force);
+      for (int i = 0; i < numActivePrivateGroups; i++) privateGroups[i].sendPacket(force);
       radio.startListening();
     }
 
+
+    void setSolidColors(CRGB * colors)
+    {
+      for(int i=0;i < numActivePrivateGroups ;i++)
+      {
+        CommandProvider::PatternData data = CommandProvider::getSolidColorPattern(colors[i]);
+        data.brightness *= globalBrightness;
+        privateGroups[i].setData(data, true);
+      }
+    }
 
 
     void setPattern(CommandProvider::PatternData data)
@@ -207,24 +226,32 @@ class RFManager :
             {
               if(syncing)
               {
-                if(numActivePrivateGroups < MAX_PRIVATE_GROUPS) 
+                bool syncingPage = 1; //page 2
+                bool syncingMode = 0; //mode 1
+                bool acceptAll = false;
+                if(acceptAll || (receivingPacket.page == syncingPage && receivingPacket.mode == syncingMode))
                 {
-                  DBG("Adding group : "+String(receivingPacket.groupID));
-                  digitalWrite(13,HIGH);
-                  delay(50);
-                  digitalWrite(13,LOW);
-                  privateGroups[numActivePrivateGroups].setup(receivingPacket.groupID, &radio);
-                  privateGroups[numActivePrivateGroups].updateFromPacket(receivingPacket);
-                  Config::instance->setRFNetworkId(numActivePrivateGroups, receivingPacket.groupID);
-                  sendCommand(GROUP_ADDED);
-                  numActivePrivateGroups++;
-               }else
-               {
-                  DBG("Max groups reached");
-               }
+                   if(numActivePrivateGroups < MAX_PRIVATE_GROUPS) 
+                    {
+                      DBG("Adding group : "+String(receivingPacket.groupID)+" at index "+String(numActivePrivateGroups));
+                      digitalWrite(13,HIGH);
+                      delay(50);
+                      digitalWrite(13,LOW);
+                      privateGroups[numActivePrivateGroups].setup(receivingPacket.groupID, &radio);
+                      privateGroups[numActivePrivateGroups].updateFromPacket(receivingPacket);
+                      Config::instance->setRFNetworkId(numActivePrivateGroups, receivingPacket.groupID);
+                      sendCommand(GROUP_ADDED);
+                      numActivePrivateGroups++;
+                   }else
+                   {
+                      DBG("Max groups reached");
+                   }
+                }
+               
+              }else if(!syncing)
+              {
+                //DBG("Packet from unknown group received "+String(receivingPacket.groupID));
               }
-              
-              DBG("Packet from unknown group received "+String(receivingPacket.groupID));
             }
           }
 
@@ -250,15 +277,6 @@ class RFManager :
       syncing = false;
       Config::instance->setNumPrivateGroups(numActivePrivateGroups);
       DBG("Finish sync, got "+String(Config::instance->getNumPrivateGroups())+" groups");
-      
-       for(int i=0;i<numActivePrivateGroups;i++)
-      {
-        DBG(" > "+String(privateGroups[i].groupID));
-        digitalWrite(13,HIGH);
-        delay(50);
-        digitalWrite(13,LOW);
-        delay(50);
-      }
     }
 
     void resetSync()
@@ -268,6 +286,7 @@ class RFManager :
 
     void resetPrivateGroups()
     {
+      DBG("Reset private groups !");
       numActivePrivateGroups = 0;
     }
 

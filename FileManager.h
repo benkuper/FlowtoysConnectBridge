@@ -28,9 +28,24 @@ public:
       pinMode(MISO_PIN,INPUT_PULLUP); 
       pinMode(MOSI_PIN,INPUT_PULLUP); 
       pinMode(CS_PIN,INPUT_PULLUP); 
+
+#if VERSION == 2
+      //Need to activate mosfet
+      pinMode(27, OUTPUT);
+      digitalWrite(27, LOW);
+      // CS bug
+      pinMode(CS_PIN, OUTPUT); // wierd CS/SS bug with SPI lib
+      digitalWrite(CS_PIN, LOW);
+
+#endif
+
       spiSD.begin(SCK_PIN, MISO_PIN, MOSI_PIN, CS_PIN);//SCK,MISO,MOSI,ss
-      
-      if(SD.begin( CS_PIN, spiSD, SDSPEED))
+
+#if VERSION == 1  
+      if(SD.begin(CS_PIN, spiSD, SDSPEED))
+#elif VERSION == 2
+      if(SD.begin(CS_PIN, spiSD))
+#endif
       {
         DBG("SD Card initialized.");
          sdIsDetected = true;

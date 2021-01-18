@@ -30,13 +30,15 @@ struct SyncPacket {
 };
 #pragma pack(pop)
 
-
 class RFGroup
 {
   public:
-    RFGroup() {}
+    RFGroup() : isDirty(true) {}
 
     ~RFGroup() {}
+
+    int dirtyCount = 5;
+    bool isDirty;
 
     void setup(int gid, RF24 * r)
     {
@@ -50,15 +52,49 @@ class RFGroup
     int groupID = -1;
     SyncPacket packet;
     
-    void sendPacket()
+    void sendPacket(bool force = false)
     {
       if(groupID <= 0) return;
+      if(dirtyCount == 0 && !force) return;
+      
       radio->write(&packet, sizeof(SyncPacket));
+      
+      if(!force) dirtyCount = max(dirtyCount -1, 0);
     }
     
-    void setData(CommandProvider::PatternData data)
+    void setData(CommandProvider::PatternData data, bool doNotUpdateIfSame = false)
     {
+      if(doNotUpdateIfSame)
+      {
+        
+        if(packet.page == data.page
+        && packet.mode == data.mode
+ /*       && packet.lfo_active == data.actives & 1//true;
+        && packet.hue_active == (data.actives >> 1) & 1//true;
+        && packet.sat_active == (data.actives >> 2) & 1//true;
+        && packet.val_active == (data.actives >> 3) & 1//true;
+        && packet.speed_active == (data.actives >> 4) & 1//true;
+        && packet.density_active == (data.actives >> 5) & 1//true;
+        && packet.lfo[0] == data.lfo1
+        && packet.lfo[1] == data.lfo2
+        && packet.lfo[2] == data.lfo3
+        && packet.lfo[3] == data.lfo4*/
+        && packet.global_val == data.brightness
+        && packet.global_hue == data.hueOffset
+        && packet.global_sat == data.saturation
+        && packet.global_speed == data.speed
+        && packet.global_density == data.density
+        )
+        {
+          //DBG(String(groupID) +  " : same packet");
+          return;
+        }else
+        {
+        }
+      }
+
       packet.padding++;
+      dirtyCount = 5;
       
       packet.page = data.page;
       packet.mode = data.mode;
@@ -102,7 +138,7 @@ class RFGroup
      {
       if(packet.padding != receivingPacket.padding)
       {
-        DBG("Received packet with groupID : " + String(receivingPacket.groupID) + ", padding " + String(receivingPacket.padding));
+        //DBG("Received packet with groupID : " + String(receivingPacket.groupID) + ", padding " + String(receivingPacket.padding));
       }
       
       packet.padding = max(packet.padding,receivingPacket.padding);
@@ -136,12 +172,13 @@ class RFGroup
      {
         packet.padding++;
         packet.wakeup = true;
+        dirtyCount = 10;
      }
 
      void powerOff()
      {
         packet.padding++;
         packet.poweroff = true;
-            
+        dirtyCount = 10;
      }
 };

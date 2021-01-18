@@ -1,17 +1,23 @@
+#define VERSION 1
+//#define VERSION 2
+
+
 #include "Config.h"
 Config conf;
 
 #define USE_SERIAL 1
 #if USE_SERIAL
-#define SERIAL_DEBUG 1
-#define USE_BLE 1
+  #define SERIAL_DEBUG 1
+  #define USE_BLE 0
 #endif
 
 #define USE_RF 1
 
+
 #define USE_WIFI 1
 #if USE_WIFI
-#define USE_OSC 1
+  #define USE_OSC 1
+  #define USE_STREAMING 1
 #endif
 
 #define USE_BUTTONS 1
@@ -29,7 +35,9 @@ BLEManager bleManager;
 #endif //BLE
 #endif //SERIAL
 
+
 #if USE_RF
+float globalBrightness = 1;
 #include "RFManager.h"
 RFManager rfManager;
 #endif
@@ -63,6 +71,11 @@ FileManager fileManager;
 Player player;
 #endif
 
+#if USE_STREAMING
+#include "StreamManager.h"
+StreamManager stream;
+#endif
+
 
 //LEDS
 float timeAtLastBLEReceived;
@@ -71,7 +84,7 @@ float timeAtLastRFReceived;
 
 void patternCallback(String providerId, CommandProvider::PatternData data)
 {
-  //DBG("Set pattern ! " + String(data.page) + ":" + String(data.mode));
+  DBG("Set pattern ! " + String(data.page) + ":" + String(data.mode) + " / "+ String(data.actives));
 
   if (providerId == "OSC") timeAtLastOSCReceived = millis() / 1000.0f;
   else timeAtLastBLEReceived = millis() / 1000.0f;
@@ -97,7 +110,7 @@ void commandCallback(String providerId, CommandProvider::CommandData data)
 
     case CommandProvider::CommandType::SYNC_RF:
       {
-        rfManager.resetSync(); //tmp because app doesn't have button
+        //rfManager.resetSync(); //tmp because app doesn't have button
         rfManager.syncRF(data.value1.floatValue);
       }
       break;
@@ -157,6 +170,11 @@ void wifiConnectionUpdate()
     DBG("Setup OSC now");
     oscManager.init();
 #endif
+
+#if USE_STREAMING
+  stream.init();
+#endif
+
   }
 }
 #endif
@@ -264,12 +282,13 @@ void updateLeds()
       else c1 = CRGB::Green;
     }
 
+#if USE_BLE
     if (bleManager.isActivated)
     {
       if (bleManager.deviceConnected) c2 = CRGB::Green;
       else c2 = CRGB::Yellow;
     }
-
+#endif
 
     float p1 = max(1 - (curTime - timeAtLastOSCReceived) / .3f, 0.f);
     float p2 = max(1 - (curTime - timeAtLastBLEReceived) / .3f, 0.f);
@@ -371,6 +390,16 @@ void loop()
   wifiManager.update();
 #if USE_OSC
   oscManager.update();
+#endif
+
+#if USE_STREAMING
+
+  if(stream.update())
+  {
+    #if USE_RF
+      rfManager.setSolidColors(stream.leds);
+    #endif
+  }
 #endif
 #endif
 
