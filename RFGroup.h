@@ -37,7 +37,7 @@ class RFGroup
 
     ~RFGroup() {}
 
-    int dirtyCount = 20;
+    int dirtyCount = 5;
     bool isDirty;
 
     void setup(int gid, RF24 * r)
@@ -52,14 +52,14 @@ class RFGroup
     int groupID = -1;
     SyncPacket packet;
     
-    void sendPacket()
+    void sendPacket(bool force = false)
     {
       if(groupID <= 0) return;
-      if(dirtyCount == 0) return;
+      if(dirtyCount == 0 && !force) return;
       
       radio->write(&packet, sizeof(SyncPacket));
       
-      dirtyCount = max(dirtyCount -1, 0);
+      if(!force) dirtyCount = max(dirtyCount -1, 0);
     }
     
     void setData(CommandProvider::PatternData data, bool doNotUpdateIfSame = false)
@@ -94,7 +94,7 @@ class RFGroup
       }
 
       packet.padding++;
-      dirtyCount = 10;
+      dirtyCount = 5;
       
       packet.page = data.page;
       packet.mode = data.mode;

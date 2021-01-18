@@ -25,7 +25,8 @@
 
 #define AUTOADD_PRIVATES 1
 
-#define SEND_TIME 20 //ms
+#define SEND_TIME 30 //ms
+#define FORCESEND_TIME 1000
 
 class RFManager :
   public CommandProvider
@@ -42,7 +43,8 @@ class RFManager :
     SyncPacket receivingPacket;
 
     long lastSendTime = 0;
-
+    long lastForceSendTime = 0;
+    
     int numActivePrivateGroups;
 
     bool syncing;
@@ -80,6 +82,12 @@ class RFManager :
         sendPackets();
       }
 
+      if (millis() > lastForceSendTime + FORCESEND_TIME)
+      {
+        lastForceSendTime = millis();
+        sendPackets(true);
+      }
+
       if(syncing && syncTime > 0 && millis() > timeAtSync + syncTime)
       {
         stopSync();
@@ -111,11 +119,11 @@ class RFManager :
 
     }
 
-    void sendPackets()
+    void sendPackets(bool force = false)
     {
       radio.stopListening();
-      for (int i = 0; i < NUM_PUBLIC_GROUPS; i++) publicGroups[i].sendPacket();
-      for (int i = 0; i < numActivePrivateGroups; i++) privateGroups[i].sendPacket();
+      //for (int i = 0; i < NUM_PUBLIC_GROUPS; i++) publicGroups[i].sendPacket(force);
+      for (int i = 0; i < numActivePrivateGroups; i++) privateGroups[i].sendPacket(force);
       radio.startListening();
     }
 
@@ -218,7 +226,10 @@ class RFManager :
             {
               if(syncing)
               {
-                if(receivingPacket.page == 0 && receivingPacket.mode == 2)
+                bool syncingPage = 1; //page 2
+                bool syncingMode = 0; //mode 1
+                bool acceptAll = false;
+                if(acceptAll || (receivingPacket.page == syncingPage && receivingPacket.mode == syncingMode))
                 {
                    if(numActivePrivateGroups < MAX_PRIVATE_GROUPS) 
                     {
@@ -266,11 +277,6 @@ class RFManager :
       syncing = false;
       Config::instance->setNumPrivateGroups(numActivePrivateGroups);
       DBG("Finish sync, got "+String(Config::instance->getNumPrivateGroups())+" groups");
-      
-      for(int i=0;i<numActivePrivateGroups;i++)
-      {
-        DBG(" > "+String(privateGroups[i].groupID));
-      }
     }
 
     void resetSync()

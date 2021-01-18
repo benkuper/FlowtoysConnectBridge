@@ -1,5 +1,5 @@
-//#define VERSION 1
-#define VERSION 2
+#define VERSION 1
+//#define VERSION 2
 
 
 #include "Config.h"
