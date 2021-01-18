@@ -105,6 +105,7 @@ void commandCallback(String providerId, CommandProvider::CommandData data)
   {
 #if USE_RF
     case CommandProvider::CommandType::GROUP_ADDED:
+    case CommandProvider::CommandType::RF_DATA:
       timeAtLastRFReceived = millis() / 1000.0f;
       break;
 
@@ -267,6 +268,7 @@ void updateLeds()
 
   CRGB c1 = CRGB::Black;
   CRGB c2 = CRGB::Black;
+  CRGB c3 = CRGB::Black;
 
   if (rfManager.syncing)
   {
@@ -292,12 +294,15 @@ void updateLeds()
 
     float p1 = max(1 - (curTime - timeAtLastOSCReceived) / .3f, 0.f);
     float p2 = max(1 - (curTime - timeAtLastBLEReceived) / .3f, 0.f);
+    float p3 = max(1 - (curTime - timeAtLastRFReceived) / .3f, 0.f);
     c1 = blend(c1, CRGB::White, (int)(p1 * 255));
     c2 = blend(c2, CRGB::White, (int)(p2 * 255));
+    c3 = blend(c3, CRGB::White, (int)(p3 * 255));
   }
 
   ledManager.setLed(0, c1, false);
   ledManager.setLed(1, c2, true);
+  ledManager.setLed(2, c3, true);
 }
 
 

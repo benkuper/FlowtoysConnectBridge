@@ -134,14 +134,18 @@ class RFGroup
 */  
     }
 
-     void updateFromPacket(SyncPacket receivingPacket)
+     bool updateFromPacket(SyncPacket receivingPacket)
      {
       if(packet.padding != receivingPacket.padding)
       {
         //DBG("Received packet with groupID : " + String(receivingPacket.groupID) + ", padding " + String(receivingPacket.padding));
+         packet.padding = max(packet.padding,receivingPacket.padding);
+         return true;
       }
+
+
+      return false;
       
-      packet.padding = max(packet.padding,receivingPacket.padding);
       //packet.page = receivingPacket.page;
       //packet.mode = receivingPacket.mode;
 

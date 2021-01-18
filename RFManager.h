@@ -208,7 +208,10 @@ class RFManager :
           
           if (receivingPacket.groupID >= PUBLIC_GROUP_START_ID && receivingPacket.groupID < PUBLIC_GROUP_START_ID + NUM_PUBLIC_GROUPS)
           {
-            publicGroups[receivingPacket.groupID - PUBLIC_GROUP_START_ID].updateFromPacket(receivingPacket);
+            if(publicGroups[receivingPacket.groupID - PUBLIC_GROUP_START_ID].updateFromPacket(receivingPacket))
+            {
+               sendCommand(RF_DATA);
+            }
           }else
           {
             bool found = false;
@@ -216,7 +219,8 @@ class RFManager :
             {
               if(receivingPacket.groupID == privateGroups[i].groupID)
               {
-                privateGroups[i].updateFromPacket(receivingPacket);
+                bool newPadding = privateGroups[i].updateFromPacket(receivingPacket);
+                if(newPadding) sendCommand(RF_DATA);
                 found = true;
                 break;
               }
