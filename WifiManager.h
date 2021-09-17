@@ -112,9 +112,14 @@ public:
 
   void setupLocal()
   {
+    const IPAddress apIP = IPAddress(192, 168, 4, 1);
     String softAPName = "FlowConnect "+Config::instance->getDeviceName();
     String softAPPass = "findyourflow";
+
+    WiFi.mode(WIFI_AP);
+    WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
     WiFi.softAP(softAPName.c_str(), softAPPass.c_str());
+    
     Serial.println("Local IP : "+String(WiFi.softAPIP()[0])+
     "."+String(WiFi.softAPIP()[1])+
     "."+String(WiFi.softAPIP()[2])+
